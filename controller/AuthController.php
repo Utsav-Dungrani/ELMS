@@ -37,16 +37,12 @@ class AuthController {
         exit;
     }
 
-    public function showEmployeeLogin(): void {
-        require_once __DIR__ . '/../views/employee/login.php';
-    }
-
     public function employeeLogin(): void {
         $email = trim($_POST['email'] ?? '');
         $password = trim($_POST['password'] ?? '');
 
         if ($email === '' || $password === '') {
-            header('Location: ' . buildUrl('employee-login', ['error' => 1]));
+            header('Location: ' . buildUrl('login', ['tab' => 'employee', 'error' => 1]));
             exit;
         }
 
@@ -59,7 +55,8 @@ class AuthController {
             exit;
         }
 
-        header('Location: ' . buildUrl('employee-login', ['error' => 1]));
+        header('Location: ' . buildUrl('login', ['tab' => 'employee', 'error' => 1]));
+exit;
         exit;
     }
 

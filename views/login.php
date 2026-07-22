@@ -1,3 +1,6 @@
+<?php
+$isEmployee = isset($_GET['tab']) && $_GET['tab'] === 'employee';
+?>
 <html>
 <head>
     <title>Login</title>
@@ -10,15 +13,15 @@
         <p class="text-center text-muted mb-4">Choose whether you are logging in as an admin or an employee.</p>
 
         <div class="btn-group w-100 mb-4" role="group" aria-label="Login type toggle">
-            <button type="button" class="btn btn-outline-primary active" id="adminTabBtn">Admin Login</button>
-            <button type="button" class="btn btn-outline-primary" id="employeeTabBtn">Employee Login</button>
+            <button type="button" class="btn btn-outline-primary <?= !$isEmployee ? 'active' : '' ?>" id="adminTabBtn">Admin Login</button>
+            <button type="button" class="btn btn-outline-primary <?= $isEmployee ? 'active' : '' ?>" id="employeeTabBtn"> Employee Login</button>
         </div>
 
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-danger">Invalid credentials!</div>
         <?php endif; ?>
 
-        <div id="adminLoginForm">
+        <div id="adminLoginForm" <?= $isEmployee ? 'style="display:none;"' : '' ?>>
             <form action="/do-login" method="POST">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                 <div class="mb-3">
@@ -33,7 +36,7 @@
             </form>
         </div>
 
-        <div id="employeeLoginForm" style="display:none;">
+        <div id="employeeLoginForm" <?= $isEmployee ? '' : 'style="display:none;"' ?>>
             <form action="/employee-do-login" method="POST">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                 <div class="mb-3">

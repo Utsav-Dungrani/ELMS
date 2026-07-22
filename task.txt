@@ -41,5 +41,7 @@ Clean routing (replace index.php?route=) Missing
 ->Additional Issues (Not in Spec)
 
 Approve / Reject / Delete via GET (should be POST) Missing
+CSRF protection on forms Missing
 
 Rejected leaves still block overlapping dates Missing
+404 page broken (wrong include paths) Missing
