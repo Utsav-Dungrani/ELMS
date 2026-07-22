@@ -31,12 +31,17 @@
     </div>
 </div>
 
-<form action="/leaves-reject?id=<?= (int) $leave['id'] ?>" method="POST" class="card p-4 shadow-sm bg-white col-md-8">
+<form action="/leaves-reject" method="POST" class="card p-4 shadow-sm bg-white col-md-8">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+    <input type="hidden" name="id" value="<?= (int) $leave['id'] ?>">
     <div class="mb-3">
         <label class="form-label">Rejection Reason</label>
-        <textarea name="rejection_reason" class="form-control" rows="4" required maxlength="500"><?= htmlspecialchars($rejectionReason) ?></textarea>
-        <div class="form-text">Explain why this leave request is being rejected.</div>
+        <textarea name="rejection_reason" class="form-control" rows="4" maxlength="500" required><?= htmlspecialchars($rejectionReason ?? '') ?></textarea>
+        <div class="form-text">
+            Explain why this leave request is being rejected.
+        </div>
     </div>
+
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-danger">Reject Leave</button>
         <a href="/leaves" class="btn btn-outline-secondary">Cancel</a>

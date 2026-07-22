@@ -60,7 +60,10 @@
                 </td>
                 <td>
                     <a href="/employees-edit?id=<?= $emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                    <a href="/employees-delete?id=<?= $emp['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this employee?');">Delete</a>
+                    <form action="/employees-delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this employee?');">
+                        <input type="hidden" name="id" value="<?= $emp['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
                 </td>
             </tr>
             <?php endforeach; ?>

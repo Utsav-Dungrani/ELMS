@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Helper loader for Models and Controllers
 require_once __DIR__ . '/config/Database.php';
 require_once __DIR__ . '/model/EmployeesModel.php';
@@ -38,6 +42,16 @@ if ($hasEmployeeSession && !$hasAdminSession && in_array($route, $adminRoutes, t
 if ($hasAdminSession && !$hasEmployeeSession && in_array($route, $employeeRoutes, true)) {
     header('Location: ' . buildUrl('dashboard'));
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (
+        !isset($_POST['csrf_token']) ||
+        !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+    ) {
+        http_response_code(403);
+        exit('Invalid CSRF token.');
+    }
 }
 
 switch ($route) {
@@ -95,7 +109,7 @@ switch ($route) {
         (new \EmployeesController())->edit($_GET['id'] ?? 0);
         break;
     case 'employees-delete':
-        (new \EmployeesController())->delete($_GET['id'] ?? 0);
+        (new \EmployeesController())->delete((int)($_POST['id'] ?? 0));
         break;
     
     case 'employee-summary':
@@ -110,10 +124,16 @@ switch ($route) {
         (new \LeavesController())->create();
         break;
     case 'leaves-approve':
-        (new \LeavesController())->updateStatus($_GET['id'] ?? 0, 'Approved');
+        (new \LeavesController())->updateStatus((int)($_POST['id'] ?? 0), 'Approved');
         break;
     case 'leaves-reject':
-        (new \LeavesController())->reject((int) ($_GET['id'] ?? 0));
+        $controller = new \LeavesController();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->reject();
+        } else {
+            $controller->showRejectForm((int) ($_GET['id'] ?? 0));
+        }
         break;
 
     default:

@@ -12,6 +12,7 @@
 <?php endif; ?>
 
 <form action="/employee-leaves-create" method="POST" class="card p-4 shadow-sm bg-white col-md-8">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
     <div class="mb-3">
         <label class="form-label">Leave Type</label>
         <select name="leave_type" class="form-select" required>

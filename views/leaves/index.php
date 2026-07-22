@@ -63,13 +63,19 @@
                 </td>
                 <td>
                     <?php if (in_array($leave['status'], ['Pending', 'Rejected'], true)): ?>
-                        <a href="/leaves-approve?id=<?= $leave['id'] ?>" class="btn btn-sm btn-success">Approve</a>
-                        <?php if ($leave['status'] === 'Pending'): ?>
-                            <a href="/leaves-reject?id=<?= $leave['id'] ?>" class="btn btn-sm btn-danger">Reject</a>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <span class="text-muted">No actions</span>
+                        <form action="/leaves-approve" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                            <input type="hidden" name="id" value="<?= $leave['id'] ?>">
+                            <button class="btn btn-success btn-sm">
+                                Approve
+                            </button>
+                        </form>
                     <?php endif; ?>
+                    <?php if (in_array($leave['status'], ['Pending', 'Approved'], true)): ?>
+        <a href="/leaves-reject?id=<?= $leave['id'] ?>" class="btn btn-danger btn-sm">
+            Reject
+        </a>
+    <?php endif; ?>
                 </td>
             </tr>
             <?php endforeach; ?>

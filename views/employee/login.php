@@ -11,6 +11,7 @@
             <div class="alert alert-danger">Invalid employee credentials!</div>
         <?php endif; ?>
         <form action="/employee-do-login" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             <div class="mb-3">
                 <label>Email</label>
                 <input type="email" name="email" class="form-control" required>

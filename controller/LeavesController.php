@@ -194,35 +194,67 @@ class LeavesController {
         exit;
     }
 
-    public function reject(int $id): void {
+    public function reject(): void
+    {
+        $id = (int)($_POST['id'] ?? 0);
+
         if ($id <= 0) {
             header('Location: ' . buildUrl('leaves'));
             exit;
         }
 
         $leave = $this->leaveModel->getById($id);
-        if (!$leave || ($leave['status'] ?? '') !== 'Pending') {
+
+        if (
+            !$leave ||
+            !in_array($leave['status'], ['Pending', 'Approved'], true)
+        ) {
             header('Location: ' . buildUrl('leaves'));
             exit;
         }
 
+        $rejectionReason = trim($_POST['rejection_reason'] ?? '');
+
+        if ($rejectionReason === '') {
+            $error = 'Please provide a reason for rejection.';
+            require_once __DIR__ . '/../views/leaves/reject.php';
+            return;
+        }
+
+        if (strlen($rejectionReason) > 500) {
+            $error = 'Rejection reason must not exceed 500 characters.';
+            require_once __DIR__ . '/../views/leaves/reject.php';
+            return;
+        }
+
+        if ($this->leaveModel->updateStatus($id, 'Rejected', $rejectionReason)) {
+            header('Location: ' . buildUrl('leaves'));
+            exit;
+        }
+
+        $error = 'Failed to reject leave request.';
+        require_once __DIR__ . '/../views/leaves/reject.php';
+    }
+
+    public function showRejectForm(int $id): void
+    {
+        if ($id <= 0) {
+            header('Location: ' . buildUrl('leaves'));
+            exit;
+        }
+
+        $leave = $this->leaveModel->getById($id);
+
+        if (
+    !$leave ||
+    !in_array($leave['status'], ['Pending', 'Approved'], true)
+) {
+    header('Location: ' . buildUrl('leaves'));
+    exit;
+}
+
         $error = '';
         $rejectionReason = '';
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $rejectionReason = trim($_POST['rejection_reason'] ?? '');
-
-            if ($rejectionReason === '') {
-                $error = 'Please provide a reason for rejection.';
-            } elseif (strlen($rejectionReason) > 500) {
-                $error = 'Rejection reason must not exceed 500 characters.';
-            } elseif ($this->leaveModel->updateStatus($id, 'Rejected', $rejectionReason)) {
-                header('Location: ' . buildUrl('leaves'));
-                exit;
-            } else {
-                $error = 'Failed to reject leave request.';
-            }
-        }
 
         require_once __DIR__ . '/../views/leaves/reject.php';
     }

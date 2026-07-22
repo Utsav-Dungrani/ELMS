@@ -5,6 +5,7 @@
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 <form action="/employees-edit?id=<?= $employee['id'] ?>" method="POST" class="card p-4 shadow-sm bg-white col-md-6">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
     <div class="mb-3">
         <label class="form-label">Full Name</label>
         <input type="text" name="name" value="<?= htmlspecialchars($employee['employee_name'] ?? '') ?>" class="form-control" required>

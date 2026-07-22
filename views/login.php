@@ -20,6 +20,7 @@
 
         <div id="adminLoginForm">
             <form action="/do-login" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                 <div class="mb-3">
                     <label>Username</label>
                     <input type="text" name="username" class="form-control" placeholder="admin" required>
@@ -34,6 +35,7 @@
 
         <div id="employeeLoginForm" style="display:none;">
             <form action="/employee-do-login" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
                 <div class="mb-3">
                     <label>Email</label>
                     <input type="email" name="email" class="form-control" required>
