@@ -42,6 +42,6 @@ Clean routing (replace index.php?route=) Missing
 
 Approve / Reject / Delete via GET (should be POST) Missing
 CSRF protection on forms Missing
-
+20-day limit not re-checked on approval Missing
 Rejected leaves still block overlapping dates Missing
 404 page broken (wrong include paths) Missing

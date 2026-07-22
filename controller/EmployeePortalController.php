@@ -80,6 +80,21 @@ class EmployeePortalController {
         ];
     }
 
+    private function getRequestedDaysInYear(string $startDate, string $endDate, int $year): int
+    {
+        $yearStart = sprintf('%04d-01-01', $year);
+        $yearEnd = sprintf('%04d-12-31', $year);
+
+        $start = max($startDate, $yearStart);
+        $end = min($endDate, $yearEnd);
+
+        if ($start > $end) {
+            return 0;
+        }
+
+        return (int) ((strtotime($end) - strtotime($start)) / 86400) + 1;
+    }
+
     public function dashboard(): void {
         $this->requireEmployeeSession();
 
@@ -112,7 +127,7 @@ class EmployeePortalController {
             }
         }
 
-        require_once __DIR__ . '/../views/employee/dashboard.php';
+        require_once __DIR__ . '/../views/employee-dashboard/dashboard.php';
     }
 
     public function leaves(): void {
@@ -129,7 +144,7 @@ class EmployeePortalController {
             'limit' => $leaveResult['limit'],
         ];
 
-        require_once __DIR__ . '/../views/employee/leaves.php';
+        require_once __DIR__ . '/../views/employee-dashboard/leaves.php';
     }
 
     public function createLeave(): void {
@@ -174,15 +189,47 @@ class EmployeePortalController {
                 if ($isProbationDepartment && $old['leave_type'] === 'Paid') {
                     $error = 'Employees in probation departments cannot request Paid leave.';
                 } else {
-                    if ($this->leaveModel->create($employeeId, $old['leave_type'], $old['start_date'], $old['end_date'], $old['reason'])) {
-                        header('Location: ' . buildUrl('employee-leaves'));
-                        exit;
+
+                    $startYear = (int) date('Y', strtotime($old['start_date']));
+                    $endYear = (int) date('Y', strtotime($old['end_date']));
+
+                    for ($year = $startYear; $year <= $endYear; $year++) {
+
+                        $requestedDays = $this->getRequestedDaysInYear(
+                            $old['start_date'],
+                            $old['end_date'],
+                            $year
+                        );
+
+                        $approvedDays = $this->leaveModel->getApprovedLeaveDaysInYear(
+                            $employeeId,
+                            $year
+                        );
+
+                        if ($approvedDays + $requestedDays > 20) {
+                            $error = "This leave would exceed the 20 approved-day limit for calendar year {$year}.";
+                            break;
+                        }
                     }
-                    $error = 'Failed to submit leave request.';
+
+                    if ($error === '') {
+                        if ($this->leaveModel->create(
+                            $employeeId,
+                            $old['leave_type'],
+                            $old['start_date'],
+                            $old['end_date'],
+                            $old['reason']
+                        )) {
+                            header('Location: ' . buildUrl('employee-leaves'));
+                            exit;
+                        }
+
+                        $error = 'Failed to submit leave request.';
+                    }
                 }
             }
         }
 
-        require_once __DIR__ . '/../views/employee/create-leave.php';
+        require_once __DIR__ . '/../views/employee-dashboard/create-leave.php';
     }
 }
