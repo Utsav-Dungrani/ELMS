@@ -19,8 +19,14 @@
         </select>
         <label class="form-label">Joining date</label>
         <input type="date" name="joining_date" value="<?= htmlspecialchars($employee['joining_date'] ?? '') ?>" class="form-control" required>
+
+        <label class="form-label">Password</label>
+        <input type="password" name="password" value="<?= htmlspecialchars($employee['password'] ?? '') ?>" class="form-control" required>
     </div>
-    <button type="submit" class="btn btn-success">Update Employee</button>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">Update Employee</button>
+        <a href="/employees" class="btn btn-outline-secondary">Back</a>
+    </div>
 </form>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>

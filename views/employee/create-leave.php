@@ -1,27 +1,24 @@
 <?php include __DIR__ . '/../layout/header.php'; ?>
 
-<h2>Apply Leave</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Apply Leave</h2>
+        <p class="text-muted small mb-0">Submit a new leave request for your account.</p>
+    </div>
+</div>
+
 <?php if (!empty($error)): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
-<form action="/leaves-create" method="POST" class="card p-4 shadow-sm bg-white col-md-6">
-    <!-- Foreign Key Reference Selection -->
-    <div class="mb-3">
-        <label class="form-label">Select Employee</label>
-        <select name="employee_id" class="form-select" required>
-            <option value="">-- Choose Employee --</option>
-            <?php foreach ($employees as $emp): ?>
-                <option value="<?= $emp['id'] ?>" <?= ($old['employee_id'] == $emp['id']) ? 'selected' : '' ?>><?= htmlspecialchars($emp['id'] . ' - ' . $emp['employee_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+
+<form action="/employee-leaves-create" method="POST" class="card p-4 shadow-sm bg-white col-md-8">
     <div class="mb-3">
         <label class="form-label">Leave Type</label>
         <select name="leave_type" class="form-select" required>
             <option value="">-- Choose Leave Type --</option>
-            <option value="S" <?= ($old['leave_type'] === 'S') ? 'selected' : '' ?>>Sick</option>
-            <option value="C" <?= ($old['leave_type'] === 'C') ? 'selected' : '' ?>>Casual</option>
-            <option value="P" <?= ($old['leave_type'] === 'P') ? 'selected' : '' ?>>Paid</option>
+            <option value="S" <?= ($old['leave_type'] === 'Sick') ? 'selected' : '' ?>>Sick</option>
+            <option value="C" <?= ($old['leave_type'] === 'Casual') ? 'selected' : '' ?>>Casual</option>
+            <option value="P" <?= ($old['leave_type'] === 'Paid') ? 'selected' : '' ?>>Paid</option>
         </select>
     </div>
     <div class="mb-3">
@@ -37,8 +34,8 @@
         <textarea name="reason" class="form-control" rows="3" required><?= htmlspecialchars($old['reason']) ?></textarea>
     </div>
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-success">Submit Application</button>
-        <a href="/leaves" class="btn btn-outline-secondary">Back</a>
+        <button type="submit" class="btn btn-success">Submit Leave</button>
+        <a href="/employee-leaves" class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
 

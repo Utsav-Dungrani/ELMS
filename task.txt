@@ -2,6 +2,13 @@
 
 Joining date cannot be a future date Missing
 Reason mandatory (server-side) Partial
+Start date cannot be in the past Missing
+End date must be greater than start date Partial
+
+->task -4
+
+No overlapping leave dates Partial
+Max 20 approved leave days per calendar year Partial
 
 ->task -5
 
@@ -13,9 +20,15 @@ OOP — interfaces Missing
 OOP — inheritance Missing
 Server-side validation Partial
 
+->Bonus task
+
+Employee-wise leave summary report Missing
+
 ->Review improvement
 
+Back button on all forms Missing
 Department filter / search Partial
 Pagination on all listing pages Missing
+Employee Leave Panel + leave application form Missing
 Show "No data available" when no records found Missing
 Clean routing (replace index.php?route=) Missing

@@ -2,7 +2,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Leave Applications</h2>
-    <a href="/leaves-create" class="btn btn-primary">Apply for Leave</a>
 </div>
 
 <form class="row g-3 mb-4" method="GET" action="/leaves">

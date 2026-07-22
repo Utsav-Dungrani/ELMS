@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/BaseModel.php';
 
-use BaseModel;
-
-class AdminModel extends BaseModel {
+class AdminModel extends \BaseModel {
     public function __construct(PDO $db) {
         parent::__construct($db, 'admins');
     }

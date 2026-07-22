@@ -2,9 +2,7 @@
 
 require_once __DIR__ . '/BaseModel.php';
 
-use BaseModel;
-
-class LeavesModel extends BaseModel {
+class LeavesModel extends \BaseModel {
     public function __construct(PDO $db) {
         parent::__construct($db, 'leaves');
     }
@@ -24,6 +22,68 @@ class LeavesModel extends BaseModel {
             'total_approved' => (int) ($result['total_approved'] ?? 0),
             'total_pending'  => (int) ($result['total_pending'] ?? 0),
             'total_rejected' => (int) ($result['total_rejected'] ?? 0),
+        ];
+    }
+
+    public function getEmployeeLeaveSummary(int $page = 1, int $limit = 10): array {
+        $offset = ($page - 1) * $limit;
+
+        $countQuery = "SELECT COUNT(*) AS total FROM employees";
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute();
+        $countResult = $countStmt->fetch();
+        $total = (int) ($countResult['total'] ?? 0);
+
+        $query = "SELECT e.id, e.employee_name, d.department_name,
+                    SUM(CASE WHEN l.status = 'Approved' THEN 1 ELSE 0 END) AS approved_leaves,
+                    SUM(CASE WHEN l.status = 'Pending' THEN 1 ELSE 0 END) AS pending_leaves,
+                    SUM(CASE WHEN l.status = 'Rejected' THEN 1 ELSE 0 END) AS rejected_leaves,
+                    COUNT(l.id) AS total_leaves
+                FROM employees e
+                LEFT JOIN departments d ON d.id = e.department_id
+                LEFT JOIN leaves l ON l.employee_id = e.id
+                GROUP BY e.id, e.employee_name, d.department_name
+                ORDER BY e.employee_name
+                LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'data' => $stmt->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+        ];
+    }
+
+    public function getLeavesForEmployee(int $employeeId, int $page = 1, int $limit = 10): array {
+        $page = max(1, $page);
+        $limit = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+
+        $countQuery = "SELECT COUNT(*) AS total FROM " . $this->getTableName() . " WHERE employee_id = :employee_id";
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute([':employee_id' => $employeeId]);
+        $countResult = $countStmt->fetch();
+        $total = (int) ($countResult['total'] ?? 0);
+        $totalPages = max(1, (int) ceil($total / $limit));
+
+        $query = "SELECT * FROM " . $this->getTableName() . " WHERE employee_id = :employee_id ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':employee_id', $employeeId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'data' => $stmt->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'totalPages' => $totalPages,
         ];
     }
 
@@ -79,6 +139,7 @@ class LeavesModel extends BaseModel {
 
     public function hasOverlappingLeave(int $employeeId, string $startDate, string $endDate): bool {
         $query = "SELECT 1 FROM " . $this->getTableName() . " WHERE employee_id = :employee_id "
+               . "AND status IN ('Pending', 'Approved') "
                . "AND end_date >= :start_date AND start_date <= :end_date LIMIT 1";
 
         $stmt = $this->conn->prepare($query);

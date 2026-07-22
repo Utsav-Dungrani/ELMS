@@ -20,6 +20,7 @@ class EmployeesController {
         $email = trim($data['email'] ?? '');
         $departmentId = (int) ($data['department_id'] ?? 0);
         $joiningDate = trim($data['joining_date'] ?? '');
+        $password = trim($data['password'] ?? '');
         $errors = [];
 
         if ($name === '') {
@@ -56,6 +57,12 @@ class EmployeesController {
             }
         }
 
+        if ($password === '') {
+            $errors[] = 'Password is required.';
+        } elseif (strlen($password) < 4) {
+            $errors[] = 'Password must be at least 4 characters.';
+        }
+
         return [
             'errors' => $errors,
             'data' => [
@@ -63,6 +70,7 @@ class EmployeesController {
                 'email' => $email,
                 'department_id' => $departmentId,
                 'joining_date' => $joiningDate,
+                'password' => $password,
             ]
         ];
     }
@@ -100,7 +108,8 @@ class EmployeesController {
                 'name' => trim($_POST['name'] ?? ''),
                 'email' => trim($_POST['email'] ?? ''),
                 'department_id' => (int) ($_POST['department_id'] ?? 0),
-                'joining_date' => trim($_POST['joining_date'] ?? '')
+                'joining_date' => trim($_POST['joining_date'] ?? ''),
+                'password' => trim($_POST['password'] ?? '')
             ];
 
             $validation = $this->validateEmployeeData($old, $validDepartmentIds);
@@ -109,7 +118,8 @@ class EmployeesController {
             if (!empty($validation['errors'])) {
                 $error = implode(' ', $validation['errors']);
             } else {
-                $this->employeeModel->create($old['name'], $old['email'], $old['department_id'], $old['joining_date']);
+                $hashedPassword = password_hash($old['password'], \PASSWORD_DEFAULT);
+                $this->employeeModel->create($old['name'], $old['email'], $old['department_id'], $old['joining_date'], $hashedPassword);
                 header('Location: ' . buildUrl('employees'));
                 exit;
             }
@@ -142,18 +152,21 @@ class EmployeesController {
             $email = trim($_POST['email'] ?? '');
             $department = (int) ($_POST['department_id'] ?? 0);
             $joining_date = trim($_POST['joining_date'] ?? '');
+            $password = trim($_POST['password'] ?? '');
 
             $validation = $this->validateEmployeeData([
                 'name' => $name,
                 'email' => $email,
                 'department_id' => $department,
-                'joining_date' => $joining_date
+                'joining_date' => $joining_date,
+                'password' => $password
             ], $validDepartmentIds, $id);
 
             if (!empty($validation['errors'])) {
                 $error = implode(' ', $validation['errors']);
             } else {
-                $this->employeeModel->update($id, $validation['data']['name'], $validation['data']['email'], $validation['data']['department_id'], $validation['data']['joining_date']);
+                $hashedPassword = password_hash($validation['data']['password'], \PASSWORD_DEFAULT);
+                $this->employeeModel->update($id, $validation['data']['name'], $validation['data']['email'], $validation['data']['department_id'], $validation['data']['joining_date'], $hashedPassword);
                 header('Location: ' . buildUrl('employees'));
                 exit;
             }
@@ -162,6 +175,7 @@ class EmployeesController {
             $employee['email'] = $validation['data']['email'];
             $employee['department_id'] = $validation['data']['department_id'];
             $employee['joining_date'] = $validation['data']['joining_date'];
+            $employee['password'] = $validation['data']['password'];
         }
 
         $stmt = $departments; // compatibility for views that expect $stmt

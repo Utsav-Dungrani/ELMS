@@ -5,11 +5,6 @@
         <h2 class="fw-bold mb-1">Dashboard</h2>
         <p class="text-muted small mb-0">Overview of staff metrics and leave statistics.</p>
     </div>
-    <div>
-        <a href="/leaves-create" class="btn btn-primary btn-sm px-3 shadow-sm">
-            <i class="fa-solid fa-plus me-1"></i> Request Leave
-        </a>
-    </div>
 </div>
 
 <!-- Key Stat Cards -->
@@ -75,8 +70,69 @@
     </div>
 </div>
 
+<!-- Employee Leave Summary -->
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">Employee Leave Summary</h5>
+                <p class="text-muted small mb-0">Approved, pending, rejected, and total leave requests per employee.</p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th class="text-center">Approved</th>
+                        <th class="text-center">Pending</th>
+                        <th class="text-center">Rejected</th>
+                        <th class="text-center">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($employeeLeaveSummary)): ?>
+                        <?php foreach ($employeeLeaveSummary as $summary): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($summary['employee_name']) ?></td>
+                                <td><?= htmlspecialchars($summary['department_name'] ?? 'N/A') ?></td>
+                                <td class="text-center text-success fw-bold"><?= (int) ($summary['approved_leaves'] ?? 0) ?></td>
+                                <td class="text-center text-warning fw-bold"><?= (int) ($summary['pending_leaves'] ?? 0) ?></td>
+                                <td class="text-center text-danger fw-bold"><?= (int) ($summary['rejected_leaves'] ?? 0) ?></td>
+                                <td class="text-center fw-bold"><?= (int) ($summary['total_leaves'] ?? 0) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No leave data available.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php if ($totalSummaryPages > 1): ?>
+            <nav aria-label="Employee summary pagination" class="mt-3">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="/dashboard?page=<?= max(1, $page - 1) ?>">Previous</a>
+                    </li>
+                    <?php for ($i = 1; $i <= $totalSummaryPages; $i++): ?>
+                        <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
+                            <a class="page-link" href="/dashboard?page=<?= $i ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    <li class="page-item <?= ($page >= $totalSummaryPages) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="/dashboard?page=<?= min($totalSummaryPages, $page + 1) ?>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        <?php endif; ?>
+    </div>
+</div>
+
 <!-- Quick Navigation Links -->
-<div class="row g-3">
+<div class="row g-3 mt-1">
     <div class="col-md-6">
         <div class="card border-0 shadow-sm p-3">
             <div class="d-flex align-items-center justify-content-between">

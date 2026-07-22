@@ -16,8 +16,14 @@ class DashboardController {
     }
 
     public function index(): void {
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = 10;
         $totalEmployees = $this->employeeModel->getTotalCount();
         $leaveStats = $this->leaveModel->getDashboardStats();
+        $employeeLeaveSummaryResult = $this->leaveModel->getEmployeeLeaveSummary($page, $limit);
+        $employeeLeaveSummary = $employeeLeaveSummaryResult['data'];
+        $totalSummaryRows = $employeeLeaveSummaryResult['total'];
+        $totalSummaryPages = max(1, (int) ceil($totalSummaryRows / $limit));
 
         // Pass stats to view
         $stats = [

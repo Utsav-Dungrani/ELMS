@@ -3,10 +3,7 @@
 require_once __DIR__ . '/BaseModel.php';
 require_once __DIR__ . '/CrudInterface.php';
 
-use BaseModel;
-use CrudInterface;
-
-class EmployeesModel extends BaseModel implements CrudInterface {
+class EmployeesModel extends \BaseModel implements \CrudInterface {
     public function __construct(PDO $db) {
         parent::__construct($db, 'employees');
     }
@@ -98,38 +95,50 @@ class EmployeesModel extends BaseModel implements CrudInterface {
         return $result ?: null;
     }
 
+    public function getByEmail(string $email): ?array {
+        $query = "SELECT e.*, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation FROM " . $this->getTableName() . " e "
+               . "LEFT JOIN departments d ON e.department_id = d.id "
+               . "WHERE e.email = :email LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':email' => $email]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
     // Insert a new employee record (store department_id as FK)
     public function create(...$args): bool {
-        if (count($args) !== 4) {
-            throw new InvalidArgumentException('Expected 4 arguments for create().');
+        if (count($args) < 4) {
+            throw new InvalidArgumentException('Expected at least 4 arguments for create().');
         }
 
-        [$name, $email, $department_id, $joining_date] = $args;
+        [$name, $email, $department_id, $joining_date, $password] = array_pad($args, 5, '');
 
-        $query = "INSERT INTO " . $this->getTableName() . " (employee_name, email, department_id, joining_date) VALUES (:name, :email, :department_id, :joining_date)";
+        $query = "INSERT INTO " . $this->getTableName() . " (employee_name, email, department_id, joining_date, password) VALUES (:name, :email, :department_id, :joining_date, :password)";
         return $this->execute($query, [
             ':name' => $name,
             ':email' => $email,
             ':department_id' => $department_id,
-            ':joining_date' => $joining_date
+            ':joining_date' => $joining_date,
+            ':password' => $password
         ]);
     }
 
     // Update existing employee record (update department_id)
     public function update(...$args): bool {
-        if (count($args) !== 5) {
-            throw new InvalidArgumentException('Expected 5 arguments for update().');
+        if (count($args) < 5) {
+            throw new InvalidArgumentException('Expected at least 5 arguments for update().');
         }
 
-        [$id, $name, $email, $department_id, $joining_date] = $args;
+        [$id, $name, $email, $department_id, $joining_date, $password] = array_pad($args, 6, '');
 
-        $query = "UPDATE " . $this->getTableName() . " SET employee_name = :name, email = :email, department_id = :department_id, joining_date = :joining_date WHERE id = :id";
+        $query = "UPDATE " . $this->getTableName() . " SET employee_name = :name, email = :email, department_id = :department_id, joining_date = :joining_date, password = :password WHERE id = :id";
         return $this->execute($query, [
             ':id' => $id,
             ':name' => $name,
             ':email' => $email,
             ':department_id' => $department_id,
-            ':joining_date' => $joining_date
+            ':joining_date' => $joining_date,
+            ':password' => $password
         ]);
     }
 
