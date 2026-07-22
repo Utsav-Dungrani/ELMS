@@ -26,13 +26,18 @@ class LeavesModel extends \BaseModel {
     }
 
     public function getById(int $id): ?array {
-        $query = "SELECT * FROM " . $this->getTableName() . " WHERE id = :id LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([':id' => $id]);
+    $query = "SELECT l.*, e.employee_name 
+              FROM " . $this->getTableName() . " l 
+              LEFT JOIN employees e ON l.employee_id = e.id 
+              WHERE l.id = :id 
+              LIMIT 1";
 
-        $result = $stmt->fetch();
-        return $result ?: null;
-    }
+    $stmt = $this->conn->prepare($query);
+    $stmt->execute([':id' => $id]);
+
+    $result = $stmt->fetch();
+    return $result ?: null;
+}
 
     public function getEmployeeLeaveSummary(int $page = 1, int $limit = 10): array {
         $offset = ($page - 1) * $limit;
