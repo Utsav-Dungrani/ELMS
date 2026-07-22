@@ -21,10 +21,10 @@ include 'header.php';
 
         <!-- Quick Action Buttons -->
         <div class="d-flex justify-content-center gap-3 flex-wrap mb-4">
-            <a href="index.php?route=employees" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm rounded-3">
+            <a href="/employees" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm rounded-3">
                 <i class="fa-solid fa-house me-2"></i>Back to Employees
             </a>
-            <a href="index.php?route=leaves" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3">
+            <a href="/leaves" class="btn btn-outline-secondary px-4 py-2 fw-semibold rounded-3">
                 <i class="fa-solid fa-calendar-check me-2"></i>View Leaves
             </a>
         </div>

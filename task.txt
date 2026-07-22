@@ -1,0 +1,21 @@
+->Task -3
+
+Joining date cannot be a future date Missing
+Reason mandatory (server-side) Partial
+
+->task -5
+
+Search employees by department Partial
+
+->technical requirment
+
+OOP — interfaces Missing
+OOP — inheritance Missing
+Server-side validation Partial
+
+->Review improvement
+
+Department filter / search Partial
+Pagination on all listing pages Missing
+Show "No data available" when no records found Missing
+Clean routing (replace index.php?route=) Missing

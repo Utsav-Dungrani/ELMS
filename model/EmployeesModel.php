@@ -1,24 +1,25 @@
 <?php
 
-class EmployeesModel {
-    private PDO $conn;
-    private string $table = "employees";
+require_once __DIR__ . '/BaseModel.php';
+require_once __DIR__ . '/CrudInterface.php';
 
+use BaseModel;
+use CrudInterface;
+
+class EmployeesModel extends BaseModel implements CrudInterface {
     public function __construct(PDO $db) {
-        $this->conn = $db;
+        parent::__construct($db, 'employees');
     }
 
     public function getTotalCount(): int {
-        $query = "SELECT COUNT(*) AS total FROM " . $this->table;
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $result = $stmt->fetch();
+        $query = "SELECT COUNT(*) AS total FROM " . $this->getTableName();
+        $result = $this->fetchOne($query);
         return (int) ($result['total'] ?? 0);
     }
 
     // Get all employees
     public function getAll(): array {
-        $query = "SELECT e.*, d.id AS department_id, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation FROM " . $this->table . " e "
+        $query = "SELECT e.*, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation FROM " . $this->table . " e "
                . "LEFT JOIN departments d ON e.department_id = d.id";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
@@ -26,9 +27,9 @@ class EmployeesModel {
     }
 
     // Get all employees with total leave count and optional search filters
-    public function getAllWithTotalLeaves(string $name = '', string $department = ''): array {
-         $query = "SELECT e.*, COALESCE(l.total_leaves, 0) AS total_leaves, d.id AS department_id, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation "
-             . "FROM " . $this->table . " e "
+    public function getAllWithTotalLeaves(string $name = '', string $department = '', int $page = 1, int $limit = 10): array {
+         $query = "SELECT e.*, COALESCE(l.total_leaves, 0) AS total_leaves, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation "
+             . "FROM " . $this->getTableName() . " e "
              . "LEFT JOIN ("
              . "SELECT employee_id, COUNT(*) AS total_leaves "
              . "FROM leaves "
@@ -55,9 +56,29 @@ class EmployeesModel {
 
         $query .= ' ORDER BY e.id';
 
+        $countQuery = 'SELECT COUNT(*) AS total FROM (' . $query . ') AS counted';
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute($params);
+        $countResult = $countStmt->fetch();
+        $total = (int) ($countResult['total'] ?? 0);
+
+        $offset = ($page - 1) * $limit;
+        $query .= ' LIMIT :limit OFFSET :offset';
+
         $stmt = $this->conn->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'data' => $stmt->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+        ];
     }
 
     public function hasLeaveRecords(int $employeeId): bool {
@@ -68,7 +89,7 @@ class EmployeesModel {
     }
 
     public function getById(int $id): ?array {
-        $query = "SELECT e.*, d.id AS department_id, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation FROM " . $this->table . " e "
+        $query = "SELECT e.*, d.department_name AS department_name, COALESCE(d.is_probation, 0) AS department_is_probation FROM " . $this->getTableName() . " e "
                . "LEFT JOIN departments d ON e.department_id = d.id "
                . "WHERE e.id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
@@ -78,10 +99,15 @@ class EmployeesModel {
     }
 
     // Insert a new employee record (store department_id as FK)
-    public function create(string $name, string $email, int $department_id, string $joining_date): bool {
-        $query = "INSERT INTO " . $this->table . " (employee_name, email, department_id, joining_date) VALUES (:name, :email, :department_id, :joining_date)";
-        $stmt = $this->conn->prepare($query);
-        return $stmt->execute([
+    public function create(...$args): bool {
+        if (count($args) !== 4) {
+            throw new InvalidArgumentException('Expected 4 arguments for create().');
+        }
+
+        [$name, $email, $department_id, $joining_date] = $args;
+
+        $query = "INSERT INTO " . $this->getTableName() . " (employee_name, email, department_id, joining_date) VALUES (:name, :email, :department_id, :joining_date)";
+        return $this->execute($query, [
             ':name' => $name,
             ':email' => $email,
             ':department_id' => $department_id,
@@ -90,10 +116,15 @@ class EmployeesModel {
     }
 
     // Update existing employee record (update department_id)
-    public function update(int $id, string $name, string $email, int $department_id, string $joining_date): bool {
-        $query = "UPDATE " . $this->table . " SET employee_name = :name, email = :email, department_id = :department_id, joining_date = :joining_date WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        return $stmt->execute([
+    public function update(...$args): bool {
+        if (count($args) !== 5) {
+            throw new InvalidArgumentException('Expected 5 arguments for update().');
+        }
+
+        [$id, $name, $email, $department_id, $joining_date] = $args;
+
+        $query = "UPDATE " . $this->getTableName() . " SET employee_name = :name, email = :email, department_id = :department_id, joining_date = :joining_date WHERE id = :id";
+        return $this->execute($query, [
             ':id' => $id,
             ':name' => $name,
             ':email' => $email,
@@ -103,7 +134,7 @@ class EmployeesModel {
     }
 
     public function emailExists(string $email, ?int $excludeId = null): bool {
-        $query = "SELECT id FROM " . $this->table . " WHERE email = :email";
+        $query = "SELECT id FROM " . $this->getTableName() . " WHERE email = :email";
         $params = [':email' => $email];
 
         if ($excludeId !== null) {
@@ -117,9 +148,8 @@ class EmployeesModel {
     }
 
     public function delete(int $id): bool {
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        return $stmt->execute([':id' => $id]);
+        $query = "DELETE FROM " . $this->getTableName() . " WHERE id = :id";
+        return $this->execute($query, [':id' => $id]);
     }
 }
 ?>

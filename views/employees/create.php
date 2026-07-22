@@ -4,7 +4,7 @@
 <?php if (!empty($error)): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
-<form action="index.php?route=employees-create" method="POST" class="card p-4 shadow-sm bg-white col-md-6">
+<form action="/employees-create" method="POST" class="card p-4 shadow-sm bg-white col-md-6">
     <div class="mb-3">
         <label class="form-label">Full Name</label>
         <input type="text" name="name" value="<?= htmlspecialchars($old['name'] ?? '') ?>" class="form-control" required>

@@ -63,25 +63,28 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 sticky-top">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="index.php?route=dashboard">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
                 <i class="fa-solid fa-briefcase text-primary fs-4"></i>
                 <span>ELMS</span>
             </a>
             <div class="collapse navbar-collapse" id="navbarMain">
-                <?php $current_route = $_GET['route'] ?? ''; ?>
+                <?php
+                $requestPath = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', \PHP_URL_PATH) ?? '/', '/');
+                $current_route = $requestPath === '' || $requestPath === 'index.php' ? 'dashboard' : explode('/', $requestPath)[0];
+                ?>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_route === 'dashboard' || $current_route === '') ? 'active' : ''; ?>" href="index.php?route=dashboard">
+                        <a class="nav-link <?php echo ($current_route === 'dashboard' || $current_route === '') ? 'active' : ''; ?>" href="/">
                             <i class="fa-solid fa-chart-line me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo $current_route === 'employees' ? 'active' : ''; ?>" href="index.php?route=employees">
+                        <a class="nav-link <?php echo $current_route === 'employees' ? 'active' : ''; ?>" href="/employees">
                             <i class="fa-solid fa-users me-2"></i>Employees
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo $current_route === 'leaves' ? 'active' : ''; ?>" href="index.php?route=leaves">
+                        <a class="nav-link <?php echo $current_route === 'leaves' ? 'active' : ''; ?>" href="/leaves">
                             <i class="fa-solid fa-calendar-check me-2"></i>Leaves
                         </a>
                     </li>
@@ -89,7 +92,7 @@
 
                 <!-- Right Action / Logout -->
                 <div class="d-flex align-items-center gap-3">
-                    <a href="index.php?route=logout" class="btn btn-outline-light btn-sm btn-logout px-3 py-2 rounded-2">
+                    <a href="/logout" class="btn btn-outline-light btn-sm btn-logout px-3 py-2 rounded-2">
                         <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
                     </a>
                 </div>

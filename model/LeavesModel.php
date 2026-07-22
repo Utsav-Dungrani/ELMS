@@ -1,11 +1,12 @@
 <?php
 
-class LeavesModel {
-    private PDO $conn;
-    private string $table = "leaves";
+require_once __DIR__ . '/BaseModel.php';
 
+use BaseModel;
+
+class LeavesModel extends BaseModel {
     public function __construct(PDO $db) {
-        $this->conn = $db;
+        parent::__construct($db, 'leaves');
     }
 
     public function getDashboardStats(): array {
@@ -14,11 +15,9 @@ class LeavesModel {
                     SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) AS total_approved,
                     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS total_pending,
                     SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) AS total_rejected
-                FROM " . $this->table;
+                FROM " . $this->getTableName();
 
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $result = $stmt->fetch();
+        $result = $this->fetchOne($query);
 
         return [
             'total_requests' => (int) ($result['total_requests'] ?? 0),
@@ -29,9 +28,9 @@ class LeavesModel {
     }
 
     // Fetch leaves WITH employee names via Foreign Key Relationship
-    public function getAllWithEmployeeDetails(string $employeeName = '', string $status = ''): array {
+    public function getAllWithEmployeeDetails(string $employeeName = '', string $status = '', int $page = 1, int $limit = 10): array {
         $query = "SELECT l.*, e.employee_name AS employee_name "
-               . "FROM " . $this->table . " l "
+               . "FROM " . $this->getTableName() . " l "
                . "JOIN employees e ON l.employee_id = e.id";
 
         $conditions = [];
@@ -53,13 +52,33 @@ class LeavesModel {
 
         $query .= ' ORDER BY l.created_at DESC';
 
+        $countQuery = 'SELECT COUNT(*) AS total FROM (' . $query . ') AS counted';
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute($params);
+        $countResult = $countStmt->fetch();
+        $total = (int) ($countResult['total'] ?? 0);
+
+        $offset = ($page - 1) * $limit;
+        $query .= ' LIMIT :limit OFFSET :offset';
+
         $stmt = $this->conn->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'data' => $stmt->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+        ];
     }
 
     public function hasOverlappingLeave(int $employeeId, string $startDate, string $endDate): bool {
-        $query = "SELECT 1 FROM " . $this->table . " WHERE employee_id = :employee_id "
+        $query = "SELECT 1 FROM " . $this->getTableName() . " WHERE employee_id = :employee_id "
                . "AND end_date >= :start_date AND start_date <= :end_date LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
@@ -76,7 +95,7 @@ class LeavesModel {
         $yearEnd = sprintf('%04d-12-31', $year);
 
         $query = "SELECT COALESCE(SUM(DATEDIFF(LEAST(end_date, :year_end), GREATEST(start_date, :year_start)) + 1), 0) AS days "
-               . "FROM " . $this->table . " "
+               . "FROM " . $this->getTableName() . " "
                . "WHERE employee_id = :employee_id AND status = 'Approved' "
                . "AND end_date >= :year_start AND start_date <= :year_end";
 
@@ -93,7 +112,12 @@ class LeavesModel {
 
     // Apply for a new leave (creates record referencing an existing employee_id)
     public function create(int $employeeId, string $leaveType, string $startDate, string $endDate, string $reason): bool {
-        $query = "INSERT INTO " . $this->table . " (employee_id, leave_type, start_date, end_date, reason, status, created_at) 
+        $reason = trim($reason);
+        if ($reason === '') {
+            return false;
+        }
+
+        $query = "INSERT INTO " . $this->getTableName() . " (employee_id, leave_type, start_date, end_date, reason, status, created_at) 
                   VALUES (:employee_id, :leave_type, :start_date, :end_date, :reason, 'Pending', NOW())";
 
         $stmt = $this->conn->prepare($query);
@@ -107,8 +131,7 @@ class LeavesModel {
     }
 
     public function updateStatus(int $id, string $status): bool {
-        $query = "UPDATE " . $this->table . " SET status = :status WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        return $stmt->execute([':status' => $status, ':id' => $id]);
+        $query = "UPDATE " . $this->getTableName() . " SET status = :status WHERE id = :id";
+        return $this->execute($query, [':status' => $status, ':id' => $id]);
     }
 }

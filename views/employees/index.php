@@ -2,20 +2,26 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Employees List</h2>
-    <a href="index.php?route=employees-create" class="btn btn-primary">Add Employee</a>
+    <a href="/employees-create" class="btn btn-primary">Add Employee</a>
 </div>
 
-<form class="row g-3 mb-4" method="GET" action="index.php">
-    <input type="hidden" name="route" value="employees">
+<form class="row g-3 mb-4" method="GET" action="/employees">
     <div class="col-md-4">
         <input type="text" name="name" class="form-control" placeholder="Search by name" value="<?= htmlspecialchars($_GET['name'] ?? '') ?>">
     </div>
     <div class="col-md-4">
-        <input type="text" name="department" class="form-control" placeholder="Search by department" value="<?= htmlspecialchars($_GET['department'] ?? '') ?>">
+        <select name="department" class="form-select">
+            <option value="">All Departments</option>
+            <?php foreach ($departments as $department): ?>
+                <option value="<?= htmlspecialchars($department['department_name']) ?>" <?= (($_GET['department'] ?? '') === $department['department_name']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($department['department_name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
     </div>
     <div class="col-md-4 d-flex gap-2">
         <button type="submit" class="btn btn-secondary">Search</button>
-        <a href="index.php?route=employees" class="btn btn-outline-secondary">Reset</a>
+        <a href="/employees" class="btn btn-outline-secondary">Reset</a>
     </div>
 </form>
 
@@ -37,21 +43,45 @@
         </tr>
     </thead>
     <tbody>
-        <?php foreach ($employees as $emp): ?>
+        <?php if (empty($employees)): ?>
         <tr>
-            <td><?= $emp['id'] ?></td>
-            <td><?= htmlspecialchars($emp['employee_name']) ?></td>
-            <td><?= htmlspecialchars($emp['email'] ?? 'N/A') ?></td>
-            <td><?= htmlspecialchars($emp['department_name'] ?? $emp['department'] ?? $emp['department_id'] ?? 'N/A') ?></td>
-            <td><?= htmlspecialchars($emp['joining_date'] ?? 'N/A') ?></td>
-            <td><?= $emp['total_leaves'] ?? 0 ?></td>
-            <td>
-                <a href="index.php?route=employees-edit&id=<?= $emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                <a href="index.php?route=employees-delete&id=<?= $emp['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this employee?');">Delete</a>
-            </td>
+            <td colspan="7" class="text-center text-muted py-4">No data available</td>
         </tr>
-        <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($employees as $emp): ?>
+            <tr>
+                <td><?= $emp['id'] ?></td>
+                <td><?= htmlspecialchars($emp['employee_name']) ?></td>
+                <td><?= htmlspecialchars($emp['email'] ?? 'N/A') ?></td>
+                <td><?= htmlspecialchars($emp['department_name'] ?? $emp['department'] ?? $emp['department_id'] ?? 'N/A') ?></td>
+                <td><?= htmlspecialchars($emp['joining_date'] ?? 'N/A') ?></td>
+                <td><?= $emp['total_leaves'] ?? 0 ?></td>
+                <td>
+                    <a href="/employees-edit?id=<?= $emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="/employees-delete?id=<?= $emp['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this employee?');">Delete</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </tbody>
 </table>
+
+<?php if ($totalPages > 1): ?>
+<nav aria-label="Employee pagination" class="mt-3">
+    <ul class="pagination justify-content-center">
+        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+            <a class="page-link" href="/employees?page=<?= max(1, $page - 1) ?>&name=<?= urlencode($_GET['name'] ?? '') ?>&department=<?= urlencode($_GET['department'] ?? '') ?>">Previous</a>
+        </li>
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
+                <a class="page-link" href="/employees?page=<?= $i ?>&name=<?= urlencode($_GET['name'] ?? '') ?>&department=<?= urlencode($_GET['department'] ?? '') ?>"><?= $i ?></a>
+            </li>
+        <?php endfor; ?>
+        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+            <a class="page-link" href="/employees?page=<?= min($totalPages, $page + 1) ?>&name=<?= urlencode($_GET['name'] ?? '') ?>&department=<?= urlencode($_GET['department'] ?? '') ?>">Next</a>
+        </li>
+    </ul>
+</nav>
+<?php endif; ?>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>

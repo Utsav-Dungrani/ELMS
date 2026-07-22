@@ -8,14 +8,19 @@ require_once __DIR__ . '/model/LeavesModel.php';
 require_once __DIR__ . '/controller/AuthController.php';
 require_once __DIR__ . '/controller/EmployeesController.php';
 require_once __DIR__ . '/controller/LeavesController.php';
-require_once __DIR__ . '/controller/DashboardController.php'; // <--- ADDED
+require_once __DIR__ . '/controller/DashboardController.php';
+require_once __DIR__ . '/routes/router.php';
 
-$route = $_GET['route'] ?? 'dashboard'; // <--- SET DEFAULT TO DASHBOARD
+$route = getCurrentRoute();
+
+if ($route === 'dashboard') {
+    $route = 'dashboard';
+}
 
 // Simple authentication check
 $publicRoutes = ['login', 'do-login'];
 if (!isset($_SESSION['user_logged_in']) && !in_array($route, $publicRoutes)) {
-    header("Location: index.php?route=login");
+    header('Location: ' . buildUrl('login'));
     exit;
 }
 

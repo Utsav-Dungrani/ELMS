@@ -1,18 +1,16 @@
 <?php
-class AdminModel {
-    private PDO $conn;
-    private string $table = "admins";
+require_once __DIR__ . '/BaseModel.php';
 
+use BaseModel;
+
+class AdminModel extends BaseModel {
     public function __construct(PDO $db) {
-        $this->conn = $db;
+        parent::__construct($db, 'admins');
     }
 
     public function getByName(string $name): ?array {
-        $query = "SELECT * FROM " . $this->table . " WHERE username = :name LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute([':name' => $name]);
-        $result = $stmt->fetch();
-        return $result ?: null;
+        $query = "SELECT * FROM " . $this->getTableName() . " WHERE username = :name LIMIT 1";
+        return $this->fetchOne($query, [':name' => $name]);
     }
 
     public function verifyPassword(string $plainPassword, string $storedHash): bool {

@@ -6,7 +6,7 @@
         <p class="text-muted small mb-0">Overview of staff metrics and leave statistics.</p>
     </div>
     <div>
-        <a href="index.php?route=leaves-create" class="btn btn-primary btn-sm px-3 shadow-sm">
+        <a href="/leaves-create" class="btn btn-primary btn-sm px-3 shadow-sm">
             <i class="fa-solid fa-plus me-1"></i> Request Leave
         </a>
     </div>
@@ -84,7 +84,7 @@
                     <h6 class="fw-bold mb-1">Manage Employees</h6>
                     <p class="text-muted small mb-0">Add new staff or manage existing profiles.</p>
                 </div>
-                <a href="index.php?route=employees" class="btn btn-outline-primary btn-sm">Go to Employees</a>
+                <a href="/employees" class="btn btn-outline-primary btn-sm">Go to Employees</a>
             </div>
         </div>
     </div>
@@ -95,7 +95,7 @@
                     <h6 class="fw-bold mb-1">Review Leave Requests</h6>
                     <p class="text-muted small mb-0">Approve or reject pending leave applications.</p>
                 </div>
-                <a href="index.php?route=leaves" class="btn btn-outline-primary btn-sm">Go to Leaves</a>
+                <a href="/leaves" class="btn btn-outline-primary btn-sm">Go to Leaves</a>
             </div>
         </div>
     </div>

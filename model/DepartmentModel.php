@@ -1,18 +1,17 @@
 <?php
 
-class DepartmentModel {
-    private PDO $conn;
-    private string $table = 'departments';
+require_once __DIR__ . '/BaseModel.php';
 
+use BaseModel;
+
+class DepartmentModel extends BaseModel {
     public function __construct(PDO $db) {
-        $this->conn = $db;
+        parent::__construct($db, 'departments');
     }
 
     public function getAll(): array {
-        $query = "SELECT id, department_name, is_probation FROM " . $this->table . " ORDER BY department_name";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        $query = "SELECT id, department_name, is_probation FROM " . $this->getTableName() . " ORDER BY department_name";
+        return $this->fetchAll($query);
     }
 }
 ?>

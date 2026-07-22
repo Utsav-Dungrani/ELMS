@@ -10,7 +10,7 @@
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-danger">Invalid credentials!</div>
         <?php endif; ?>
-        <form action="index.php?route=do-login" method="POST">
+        <form action="/do-login" method="POST">
             <div class="mb-3">
                 <label>Username</label>
                 <input type="text" name="username" class="form-control" placeholder="admin" required>

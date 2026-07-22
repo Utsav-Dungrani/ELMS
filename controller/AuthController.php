@@ -15,22 +15,27 @@ class AuthController {
 
     public function login(): void {
         $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $password = trim($_POST['password'] ?? '');
+
+        if ($username === '' || $password === '') {
+            header('Location: ' . buildUrl('login', ['error' => 1]));
+            exit;
+        }
 
         $admin = $this->adminModel->getByName($username);
         if ($admin && $this->adminModel->verifyPassword($password, $admin['password_hash'])) {
             $_SESSION['user_logged_in'] = true;
-            header("Location: index.php?route=dashboard");
+            header('Location: ' . buildUrl('dashboard'));
             exit;
         }
 
-        header("Location: index.php?route=login&error=1");
+        header('Location: ' . buildUrl('login', ['error' => 1]));
         exit;
     }
 
     public function logout(): void {
         session_destroy();
-        header("Location: index.php?route=login");
+        header('Location: ' . buildUrl('login'));
         exit;
     }
 
