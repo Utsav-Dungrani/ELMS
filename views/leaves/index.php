@@ -22,6 +22,14 @@
     </div>
 </form>
 
+<?php if (!empty($_SESSION['error_message'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($_SESSION['error_message']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php unset($_SESSION['error_message']); ?>
+<?php endif; ?>
+
 <table class="table table-striped bg-white shadow-sm">
     <thead class="table-dark">
         <tr>

@@ -136,9 +136,8 @@ class LeavesController {
         );
 
         if ($approvedDays + $requestedDays > 20) {
-            header('Location: ' . buildUrl('leaves', [
-                'error' => 'Leave approval exceeds the 20-day annual limit.'
-            ]));
+            $_SESSION['error_message'] = 'Cannot approve leave. The employee would exceed the 20-day annual leave limit.';
+            header('Location: ' . buildUrl('leaves'));
             exit;
         }
     }

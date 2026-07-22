@@ -22,7 +22,12 @@
         <input type="date" name="joining_date" value="<?= htmlspecialchars($employee['joining_date'] ?? '') ?>" class="form-control" required>
 
         <label class="form-label">Password</label>
-        <input type="password" name="password" value="<?= htmlspecialchars($employee['password'] ?? '') ?>" class="form-control" required>
+        <div class="input-group">
+            <input type="password" class="form-control" id="password" name="password" value="<?= htmlspecialchars($employee['password'] ?? '') ?>" required>
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password', this)" >
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
     </div>
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-success">Update Employee</button>

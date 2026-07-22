@@ -5,6 +5,7 @@ $isEmployee = isset($_GET['tab']) && $_GET['tab'] === 'employee';
 <head>
     <title>Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 </head>
 <body class="bg-light d-flex align-items-center vh-100">
 <div class="container col-md-5">
@@ -30,7 +31,13 @@ $isEmployee = isset($_GET['tab']) && $_GET['tab'] === 'employee';
                 </div>
                 <div class="mb-3">
                     <label>Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="admin123" required>
+                    <!-- <input type="password" name="password" class="form-control" placeholder="admin123" required> -->
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="adminpassword" name="password" placeholder="admin123" required>
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('adminpassword', this)" >
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login as Admin</button>
             </form>
@@ -45,7 +52,12 @@ $isEmployee = isset($_GET['tab']) && $_GET['tab'] === 'employee';
                 </div>
                 <div class="mb-3">
                     <label>Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="employeepassword" name="password" required>
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('employeepassword', this)" >
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login as Employee</button>
             </form>
@@ -73,5 +85,21 @@ $isEmployee = isset($_GET['tab']) && $_GET['tab'] === 'employee';
         adminLoginForm.style.display = 'none';
     });
 </script>
+<script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+        </script>
 </body>
 </html>
