@@ -1,5 +1,8 @@
 <?php include __DIR__ . '/../layout/header.php'; ?>
 
+<!-- Hidden CSRF token container -->
+<input type="hidden" id="admin-csrf-token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">Dashboard</h2>
@@ -79,55 +82,11 @@
                 <p class="text-muted small mb-0">Approved, pending, rejected, and total leave requests per employee.</p>
             </div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Department</th>
-                        <th class="text-center">Approved</th>
-                        <th class="text-center">Pending</th>
-                        <th class="text-center">Rejected</th>
-                        <th class="text-center">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($employeeLeaveSummary)): ?>
-                        <?php foreach ($employeeLeaveSummary as $summary): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($summary['employee_name']) ?></td>
-                                <td><?= htmlspecialchars($summary['department_name'] ?? 'N/A') ?></td>
-                                <td class="text-center text-success fw-bold"><?= (int) ($summary['approved_leaves'] ?? 0) ?></td>
-                                <td class="text-center text-warning fw-bold"><?= (int) ($summary['pending_leaves'] ?? 0) ?></td>
-                                <td class="text-center text-danger fw-bold"><?= (int) ($summary['rejected_leaves'] ?? 0) ?></td>
-                                <td class="text-center fw-bold"><?= (int) ($summary['total_leaves'] ?? 0) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">No leave data available.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+
+        <!-- Target Container for Summary Table AJAX Updates -->
+        <div id="employee-summary-container">
+            <?php include __DIR__ . '/_employee_summary_table.php'; ?>
         </div>
-        <?php if ($totalSummaryPages > 1): ?>
-            <nav aria-label="Employee summary pagination" class="mt-3">
-                <ul class="pagination justify-content-center mb-0">
-                    <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/dashboard?page=<?= max(1, $page - 1) ?>">Previous</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $totalSummaryPages; $i++): ?>
-                        <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
-                            <a class="page-link" href="/dashboard?page=<?= $i ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?= ($page >= $totalSummaryPages) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/dashboard?page=<?= min($totalSummaryPages, $page + 1) ?>">Next</a>
-                    </li>
-                </ul>
-            </nav>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -158,3 +117,42 @@
 </div>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const summaryContainer = document.getElementById('employee-summary-container');
+    const csrfTokenElem = document.getElementById('admin-csrf-token');
+
+    function fetchEmployeeSummary(page = 1) {
+        const formData = new FormData();
+        if (csrfTokenElem && csrfTokenElem.value) {
+            formData.append('csrf_token', csrfTokenElem.value);
+        }
+        formData.append('page', page);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            summaryContainer.innerHTML = html;
+        })
+        .catch(error => console.error('Error fetching admin summary:', error));
+    }
+
+    summaryContainer.addEventListener('click', function(e) {
+        const pageLink = e.target.closest('.ajax-summary-page');
+        if (pageLink) {
+            e.preventDefault();
+            const page = pageLink.getAttribute('data-page');
+            if (page) {
+                fetchEmployeeSummary(page);
+            }
+        }
+    });
+});
+</script>

@@ -99,9 +99,72 @@ class EmployeePortalController {
         $this->requireEmployeeSession();
 
         $employeeId = (int) $_SESSION['employee_id'];
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $page = max(1, (int) ($_POST['page'] ?? $_GET['page'] ?? 1));
+
         $employee = $this->employeeModel->getById($employeeId);
         $leaveResult = $this->leaveModel->getLeavesForEmployee($employeeId, $page, 10);
+        $employeeLeaves = $leaveResult['data'];
+
+        $pagination = [
+            'page' => $leaveResult['page'],
+            'totalPages' => $leaveResult['totalPages'],
+            'limit' => $leaveResult['limit'],
+        ];
+
+        // Fetch overall stats for stat cards
+        if (method_exists($this->leaveModel, 'getEmployeeStats')) {
+            $stats = $this->leaveModel->getEmployeeStats($employeeId);
+        } else {
+            $stats = [
+                'approved' => 0,
+                'pending' => 0,
+                'rejected' => 0,
+                'total' => count($employeeLeaves),
+            ];
+
+            foreach ($employeeLeaves as $leave) {
+                $status = $leave['status'] ?? '';
+                if ($status === 'Approved') {
+                    $stats['approved']++;
+                } elseif ($status === 'Rejected') {
+                    $stats['rejected']++;
+                } else {
+                    $stats['pending']++;
+                }
+            }
+        }
+
+        // AJAX Request Check
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                  || ($_SERVER['REQUEST_METHOD'] === 'POST');
+
+        if ($isAjax) {
+            // Render ONLY the dashboard-specific table partial
+            require_once __DIR__ . '/../views/employee-dashboard/_dashboard_leaves_table.php';
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/employee-dashboard/dashboard.php';
+    }
+
+    public function leaves(): void {
+        $this->requireEmployeeSession();
+
+        $employeeId = (int) $_SESSION['employee_id'];
+        $page = max(1, (int)($_POST['page'] ?? $_GET['page'] ?? 1));
+        $leaveType = trim($_POST['leave_type'] ?? $_GET['leave_type'] ?? '');
+        $status = trim($_POST['status'] ?? $_GET['status'] ?? '');
+
+        $employee = $this->employeeModel->getById($employeeId);
+
+        $leaveResult = $this->leaveModel->getLeavesForEmployee(
+            $employeeId,
+            $page,
+            10,
+            $leaveType,
+            $status
+        );
+
         $employeeLeaves = $leaveResult['data'];
         $pagination = [
             'page' => $leaveResult['page'],
@@ -109,65 +172,19 @@ class EmployeePortalController {
             'limit' => $leaveResult['limit'],
         ];
 
-        $stats = [
-            'approved' => 0,
-            'pending' => 0,
-            'rejected' => 0,
-            'total' => count($employeeLeaves),
-        ];
+        // Check if AJAX request
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                  || ($_SERVER['REQUEST_METHOD'] === 'POST');
 
-        foreach ($employeeLeaves as $leave) {
-            $status = $leave['status'] ?? '';
-            if ($status === 'Approved') {
-                $stats['approved']++;
-            } elseif ($status === 'Rejected') {
-                $stats['rejected']++;
-            } else {
-                $stats['pending']++;
-            }
+        if ($isAjax) {
+            // Return ONLY the table HTML partial for AJAX
+            require_once __DIR__ . '/../views/employee-dashboard/_leaves_table.php';
+            exit;
         }
 
-        require_once __DIR__ . '/../views/employee-dashboard/dashboard.php';
+        // Normal Page Load
+        require_once __DIR__ . '/../views/employee-dashboard/leaves.php';
     }
-
-    public function leaves(): void {
-    $this->requireEmployeeSession();
-
-    $employeeId = (int) $_SESSION['employee_id'];
-    $page = max(1, (int)($_POST['page'] ?? $_GET['page'] ?? 1));
-    $leaveType = trim($_POST['leave_type'] ?? $_GET['leave_type'] ?? '');
-    $status = trim($_POST['status'] ?? $_GET['status'] ?? '');
-
-    $employee = $this->employeeModel->getById($employeeId);
-
-    $leaveResult = $this->leaveModel->getLeavesForEmployee(
-        $employeeId,
-        $page,
-        10,
-        $leaveType,
-        $status
-    );
-
-    $employeeLeaves = $leaveResult['data'];
-    $pagination = [
-        'page' => $leaveResult['page'],
-        'totalPages' => $leaveResult['totalPages'],
-        'limit' => $leaveResult['limit'],
-    ];
-
-    // Check if AJAX request
-    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-              strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-
-    if ($isAjax) {
-        // Return ONLY the table HTML partial for AJAX
-        require_once __DIR__ . '/../views/employee-dashboard/_leaves_table.php';
-        exit;
-    }
-
-    // Normal Page Load
-    require_once __DIR__ . '/../views/employee-dashboard/leaves.php';
-}
 
     public function createLeave(): void {
         $this->requireEmployeeSession();

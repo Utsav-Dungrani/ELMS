@@ -16,23 +16,42 @@ class DashboardController {
     }
 
     public function index(): void {
-        $page = max(1, (int) ($_GET['page'] ?? 1));
-        $limit = 10;
-        $totalEmployees = $this->employeeModel->getTotalCount();
-        $leaveStats = $this->leaveModel->getDashboardStats();
-        $employeeLeaveSummaryResult = $this->leaveModel->getEmployeeLeaveSummary($page, $limit);
-        $employeeLeaveSummary = $employeeLeaveSummaryResult['data'];
-        $totalSummaryRows = $employeeLeaveSummaryResult['total'];
-        $totalSummaryPages = max(1, (int) ceil($totalSummaryRows / $limit));
+        // 1. Get current page (default: 1)
+        $page = max(1, (int) ($_POST['page'] ?? $_GET['page'] ?? 1));
+        $limit = 10; // Change to a smaller number (e.g., 2) to test pagination if you have few employees
 
-        // Pass stats to view
+        // 2. Fetch Employee Leave Summary Data
+        $employeeLeaveSummary = [];
+        $totalSummaryPages = 1;
+
+        if (method_exists($this->leaveModel, 'getEmployeeLeaveSummary')) {
+            $summaryResult = $this->leaveModel->getEmployeeLeaveSummary($page, $limit);
+            
+            $employeeLeaveSummary = $summaryResult['data'] ?? [];
+            
+            // Extract total records count from model result
+            $totalRecords = $summaryResult['total'] ?? $summaryResult['totalRecords'] ?? count($employeeLeaveSummary);
+            
+            // Calculate total pages dynamically
+            $totalSummaryPages = (int) ceil($totalRecords / $limit);
+        }
+
+        // 3. Overall Stats Calculation
         $stats = [
-            'total_employees' => $totalEmployees,
-            'total_leaves'    => $leaveStats['total_requests'],
-            'approved_leaves' => $leaveStats['total_approved'],
-            'pending_leaves'  => $leaveStats['total_pending'],
-            'rejected_leaves'  => $leaveStats['total_rejected']
+            'total_employees' => method_exists($this->employeeModel, 'getTotalCount') ? $this->employeeModel->getTotalCount() : 0,
+            'total_leaves'    => 0,
+            'approved_leaves' => 0,
+            'pending_leaves'  => 0,
         ];
+
+        // 4. Handle AJAX request
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || ($_SERVER['REQUEST_METHOD'] === 'POST');
+
+        if ($isAjax) {
+            require_once __DIR__ . '/../views/dashboard/_employee_summary_table.php';
+            exit;
+        }
 
         require_once __DIR__ . '/../views/dashboard/index.php';
     }

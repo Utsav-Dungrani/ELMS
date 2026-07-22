@@ -1,5 +1,8 @@
 <?php include __DIR__ . '/../layout/header.php'; ?>
 
+<!-- Hidden CSRF Token container for secure AJAX requests -->
+<input type="hidden" id="dashboard-csrf-token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">Employee Dashboard</h2>
@@ -66,56 +69,54 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0">My Leave Requests</h5>
-            <a href="/employee-leaves" class="btn btn-primary btn-sm">Apply Leave</a>
+            <a href="<?= buildUrl('employee-leaves') ?>" class="btn btn-primary btn-sm">Apply Leave</a>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Leave Type</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php if (!empty($employeeLeaves)): ?>
-                    <?php foreach ($employeeLeaves as $index => $leave): ?>
-                        <tr>
-                            <td><?= (int) (($pagination['page'] - 1) * $pagination['limit'] + $index + 1) ?></td>
-                            <td><?= htmlspecialchars($leave['leave_type'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($leave['start_date'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($leave['end_date'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($leave['status'] ?? '') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-3">No leave requests yet.</td>
-                    </tr>
-                <?php endif; ?>
-                </tbody>
-            </table>
+
+        <!-- Wrapper target for AJAX swapping -->
+        <div id="dashboard-leaves-table-container">
+            <?php include __DIR__ . '/_dashboard_leaves_table.php'; ?>
         </div>
-        <?php if (($pagination['totalPages'] ?? 1) > 1): ?>
-            <nav aria-label="Employee dashboard pagination" class="mt-3">
-                <ul class="pagination justify-content-center mb-0">
-                    <li class="page-item <?= ($pagination['page'] <= 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/employee-dashboard?page=<?= max(1, $pagination['page'] - 1) ?>">Previous</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $pagination['totalPages']; $i++): ?>
-                        <li class="page-item <?= ($i === $pagination['page']) ? 'active' : '' ?>">
-                            <a class="page-link" href="/employee-dashboard?page=<?= $i ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?= ($pagination['page'] >= $pagination['totalPages']) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/employee-dashboard?page=<?= min($pagination['totalPages'], $pagination['page'] + 1) ?>">Next</a>
-                    </li>
-                </ul>
-            </nav>
-        <?php endif; ?>
     </div>
 </div>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableContainer = document.getElementById('dashboard-leaves-table-container');
+    const csrfTokenElem = document.getElementById('dashboard-csrf-token');
+
+    function fetchDashboardLeaves(page = 1) {
+        const formData = new FormData();
+        if (csrfTokenElem && csrfTokenElem.value) {
+            formData.append('csrf_token', csrfTokenElem.value);
+        }
+        formData.append('page', page);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            tableContainer.innerHTML = html;
+        })
+        .catch(error => console.error('Error fetching dashboard leaves via AJAX:', error));
+    }
+
+    // Delegated click handler for pagination links
+    tableContainer.addEventListener('click', function(e) {
+        const pageLink = e.target.closest('.ajax-page-link');
+        if (pageLink) {
+            e.preventDefault();
+            const page = pageLink.getAttribute('data-page');
+            if (page) {
+                fetchDashboardLeaves(page);
+            }
+        }
+    });
+});
+</script>
