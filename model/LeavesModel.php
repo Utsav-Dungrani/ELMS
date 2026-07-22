@@ -59,21 +59,59 @@ class LeavesModel extends \BaseModel {
         ];
     }
 
-    public function getLeavesForEmployee(int $employeeId, int $page = 1, int $limit = 10): array {
+    public function getLeavesForEmployee(
+        int $employeeId,
+        int $page = 1,
+        int $limit = 10,
+        string $leaveType = '',
+        string $status = ''
+    ): array {
+
         $page = max(1, $page);
         $limit = max(1, $limit);
         $offset = ($page - 1) * $limit;
 
-        $countQuery = "SELECT COUNT(*) AS total FROM " . $this->getTableName() . " WHERE employee_id = :employee_id";
-        $countStmt = $this->conn->prepare($countQuery);
-        $countStmt->execute([':employee_id' => $employeeId]);
-        $countResult = $countStmt->fetch();
-        $total = (int) ($countResult['total'] ?? 0);
-        $totalPages = max(1, (int) ceil($total / $limit));
+        $conditions = ["employee_id = :employee_id"];
+        $params = [
+            ':employee_id' => $employeeId
+        ];
 
-        $query = "SELECT * FROM " . $this->getTableName() . " WHERE employee_id = :employee_id ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+        if ($leaveType !== '') {
+            $conditions[] = "leave_type = :leave_type";
+            $params[':leave_type'] = $leaveType;
+        }
+
+        if ($status !== '') {
+            $conditions[] = "status = :status";
+            $params[':status'] = $status;
+        }
+
+        $where = implode(' AND ', $conditions);
+
+        // Count query
+        $countQuery = "SELECT COUNT(*) AS total
+                    FROM {$this->getTableName()}
+                    WHERE $where";
+
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute($params);
+
+        $total = (int)$countStmt->fetch()['total'];
+        $totalPages = max(1, (int)ceil($total / $limit));
+
+        // Data query
+        $query = "SELECT *
+                FROM {$this->getTableName()}
+                WHERE $where
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset";
+
         $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(':employee_id', $employeeId, PDO::PARAM_INT);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -178,8 +216,8 @@ class LeavesModel extends \BaseModel {
             return false;
         }
 
-        $query = "INSERT INTO " . $this->getTableName() . " (employee_id, leave_type, start_date, end_date, reason, status, rejection_reason, created_at) 
-                  VALUES (:employee_id, :leave_type, :start_date, :end_date, :reason, 'Pending', NULL, NOW())";
+        $query = "INSERT INTO " . $this->getTableName() . " (employee_id, leave_type, start_date, end_date, reason, status, created_at) 
+                  VALUES (:employee_id, :leave_type, :start_date, :end_date, :reason, 'Pending', NOW())";
 
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([
@@ -191,31 +229,8 @@ class LeavesModel extends \BaseModel {
         ]);
     }
 
-    public function getById(int $id): ?array {
-        $query = "SELECT l.*, e.employee_name AS employee_name "
-               . "FROM " . $this->getTableName() . " l "
-               . "JOIN employees e ON l.employee_id = e.id "
-               . "WHERE l.id = :id";
-
-        return $this->fetchOne($query, [':id' => $id]);
-    }
-
-    public function updateStatus(int $id, string $status, ?string $rejectionReason = null): bool {
-        if ($status === 'Rejected') {
-            $rejectionReason = trim($rejectionReason ?? '');
-            if ($rejectionReason === '') {
-                return false;
-            }
-
-            $query = "UPDATE " . $this->getTableName() . " SET status = :status, rejection_reason = :rejection_reason WHERE id = :id";
-            return $this->execute($query, [
-                ':status' => $status,
-                ':rejection_reason' => $rejectionReason,
-                ':id' => $id,
-            ]);
-        }
-
-        $query = "UPDATE " . $this->getTableName() . " SET status = :status, rejection_reason = NULL WHERE id = :id";
+    public function updateStatus(int $id, string $status): bool {
+        $query = "UPDATE " . $this->getTableName() . " SET status = :status WHERE id = :id";
         return $this->execute($query, [':status' => $status, ':id' => $id]);
     }
 }

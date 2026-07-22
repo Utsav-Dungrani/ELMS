@@ -134,9 +134,19 @@ class EmployeePortalController {
         $this->requireEmployeeSession();
 
         $employeeId = (int) $_SESSION['employee_id'];
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $leaveType = trim($_GET['leave_type'] ?? '');
+        $status = trim($_GET['status'] ?? '');
+
         $employee = $this->employeeModel->getById($employeeId);
-        $leaveResult = $this->leaveModel->getLeavesForEmployee($employeeId, $page, 10);
+
+        $leaveResult = $this->leaveModel->getLeavesForEmployee(
+            $employeeId,
+            $page,
+            10,
+            $leaveType,
+            $status
+        );
         $employeeLeaves = $leaveResult['data'];
         $pagination = [
             'page' => $leaveResult['page'],

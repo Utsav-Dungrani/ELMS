@@ -30,6 +30,37 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-body">
+        <div class="row mb-3">
+            <form method="GET" action="/employee-leaves" class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Leave Type</label>
+                    <select name="leave_type" class="form-select">
+                        <option value="">All</option>
+                        <option value="Sick" <?= ($_GET['leave_type'] ?? '') === 'Sick' ? 'selected' : '' ?>>Sick</option>
+                        <option value="Casual" <?= ($_GET['leave_type'] ?? '') === 'Casual' ? 'selected' : '' ?>>Casual</option>
+                        <option value="Paid" <?= ($_GET['leave_type'] ?? '') === 'Paid' ? 'selected' : '' ?>>Paid</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All</option>
+                        <option value="Pending" <?= ($_GET['status'] ?? '') === 'Pending' ? 'selected' : '' ?>>Pending</option>
+                        <option value="Approved" <?= ($_GET['status'] ?? '') === 'Approved' ? 'selected' : '' ?>>Approved</option>
+                        <option value="Rejected" <?= ($_GET['status'] ?? '') === 'Rejected' ? 'selected' : '' ?>>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary">
+                        Filter
+                    </button>
+
+                    <a href="/employee-leaves" class="btn btn-outline-secondary">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
@@ -78,19 +109,25 @@
                 </tbody>
             </table>
         </div>
+        <?php
+            $query = [
+                'leave_type' => $_GET['leave_type'] ?? '',
+                'status' => $_GET['status'] ?? ''
+            ];
+        ?>
         <?php if (($pagination['totalPages'] ?? 1) > 1): ?>
             <nav aria-label="Employee leave pagination" class="mt-3">
                 <ul class="pagination justify-content-center mb-0">
                     <li class="page-item <?= ($pagination['page'] <= 1) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/employee-leaves?page=<?= max(1, $pagination['page'] - 1) ?>">Previous</a>
+                        <a class="page-link" href="/employee-leaves?<?= http_build_query(array_merge($query, ['page' => max(1, $pagination['page'] - 1)])) ?>">Previous</a>
                     </li>
                     <?php for ($i = 1; $i <= $pagination['totalPages']; $i++): ?>
                         <li class="page-item <?= ($i === $pagination['page']) ? 'active' : '' ?>">
-                            <a class="page-link" href="/employee-leaves?page=<?= $i ?>"><?= $i ?></a>
+                            <a class="page-link" href="/employee-leaves?<?= http_build_query(array_merge($query, ['page' => $i])) ?>"><?= $i ?></a>
                         </li>
                     <?php endfor; ?>
                     <li class="page-item <?= ($pagination['page'] >= $pagination['totalPages']) ? 'disabled' : '' ?>">
-                        <a class="page-link" href="/employee-leaves?page=<?= min($pagination['totalPages'], $pagination['page'] + 1) ?>">Next</a>
+                        <a class="page-link" href="/employee-leaves?<?= http_build_query(array_merge($query, ['page' => min($pagination['totalPages'], $pagination['page'] + 1)])) ?>">Next</a>
                     </li>
                 </ul>
             </nav>
