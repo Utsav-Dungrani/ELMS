@@ -34,7 +34,7 @@ Store and display reason for leave rejection Missing
 Admins can approve previously rejected leaves Missing
 Show "No data available" when no records found Missing
 Employees can reapply for same dates after rejection Missing
-    
+Display Approved and Pending/Rejected leave counts per employee Missing
 Password field on employee form Missing
 Clean routing (replace index.php?route=) Missing
 

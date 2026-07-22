@@ -198,4 +198,15 @@ class EmployeesController {
         header('Location: ' . buildUrl('employees'));
         exit;
     }
+
+    public function summary(int $id): void
+    {
+        header('Content-Type: application/json');
+
+        echo json_encode(
+            $this->employeeModel->getEmployeeSummary($id)
+        );
+
+        exit;
+    }
 }

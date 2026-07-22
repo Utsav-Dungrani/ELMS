@@ -97,6 +97,10 @@ switch ($route) {
     case 'employees-delete':
         (new \EmployeesController())->delete($_GET['id'] ?? 0);
         break;
+    
+    case 'employee-summary':
+        (new \EmployeesController())->summary((int)($_GET['id'] ?? 0));
+        break;
 
     // --- LEAVES ---
     case 'leaves':

@@ -160,5 +160,50 @@ class EmployeesModel extends \BaseModel implements \CrudInterface {
         $query = "DELETE FROM " . $this->getTableName() . " WHERE id = :id";
         return $this->execute($query, [':id' => $id]);
     }
+
+    public function getEmployeeSummary(int $id): ?array
+    {
+        $query = "SELECT
+                    e.*,
+                    d.department_name,
+
+                    SUM(CASE WHEN l.status='Approved' THEN 1 ELSE 0 END) approved,
+                    SUM(CASE WHEN l.status='Pending' THEN 1 ELSE 0 END) pending,
+                    SUM(CASE WHEN l.status='Rejected' THEN 1 ELSE 0 END) rejected,
+                    COUNT(l.id) total
+
+                FROM employees e
+
+                LEFT JOIN departments d
+                    ON d.id=e.department_id
+
+                LEFT JOIN leaves l
+                    ON l.employee_id=e.id
+
+                WHERE e.id=:id
+
+                GROUP BY e.id";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id'=>$id]);
+
+        $employee = $stmt->fetch();
+
+        if(!$employee){
+            return null;
+        }
+
+        $query = "SELECT leave_type,start_date,end_date,status,reason,rejection_reason
+                FROM leaves
+                WHERE employee_id=:id
+                ORDER BY created_at DESC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id'=>$id]);
+
+        $employee['history']=$stmt->fetchAll();
+
+        return $employee;
+    }
 }
 ?>
