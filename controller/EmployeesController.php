@@ -76,16 +76,29 @@ class EmployeesController {
     }
 
     public function index(): void {
-        $searchName = trim($_GET['name'] ?? '');
-        $searchDepartment = trim($_GET['department'] ?? '');
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        // Fall back across POST and GET so both initial rendering and AJAX filtering work
+        $searchName = trim($_POST['name'] ?? $_GET['name'] ?? '');
+        $searchDepartment = trim($_POST['department'] ?? $_GET['department'] ?? '');
+        $page = max(1, (int) ($_POST['page'] ?? $_GET['page'] ?? 1));
         $limit = 10;
+
         $departmentModel = new \DepartmentModel($this->db);
         $departments = $departmentModel->getAll();
+        
         $result = $this->employeeModel->getAllWithTotalLeaves($searchName, $searchDepartment, $page, $limit);
         $employees = $result['data'];
         $totalEmployees = $result['total'];
         $totalPages = max(1, (int) ceil($totalEmployees / $limit));
+
+        // Detect AJAX call
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                  strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        if ($isAjax) {
+            // Render only the table & pagination partial
+            require_once __DIR__ . '/../views/employees/_employees_table.php';
+            exit;
+        }
 
         require_once __DIR__ . '/../views/employees/index.php';
     }

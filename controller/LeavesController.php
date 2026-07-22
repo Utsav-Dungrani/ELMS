@@ -81,14 +81,26 @@ class LeavesController {
 
     // Displays list of all leaves
     public function index(): void {
-        $searchEmployeeName = trim($_GET['employee_name'] ?? '');
-        $searchStatus = trim($_GET['status'] ?? '');
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        // Fall back across POST and GET so both initial rendering and AJAX filtering work
+        $searchEmployeeName = trim($_POST['employee_name'] ?? $_GET['employee_name'] ?? '');
+        $searchStatus = trim($_POST['status'] ?? $_GET['status'] ?? '');
+        $page = max(1, (int) ($_POST['page'] ?? $_GET['page'] ?? 1));
         $limit = 10;
+
         $result = $this->leaveModel->getAllWithEmployeeDetails($searchEmployeeName, $searchStatus, $page, $limit);
         $leaves = $result['data'];
         $totalLeaves = $result['total'];
         $totalPages = max(1, (int) ceil($totalLeaves / $limit));
+
+        // Detect AJAX call
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                  strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+        if ($isAjax) {
+            // Render only the table & pagination partial
+            require_once __DIR__ . '/../views/leaves/_leaves_table.php';
+            exit;
+        }
 
         require_once __DIR__ . '/../views/leaves/index.php';
     }
@@ -108,45 +120,45 @@ class LeavesController {
     }
 
     public function updateStatus(int $id, string $status): void {
-    if ($id <= 0 || $status !== 'Approved') {
-        header('Location: ' . buildUrl('leaves'));
-        exit;
-    }
-
-    $leave = $this->leaveModel->getById($id);
-
-    if (!$leave || !in_array($leave['status'] ?? '', ['Pending', 'Rejected'], true)) {
-        header('Location: ' . buildUrl('leaves'));
-        exit;
-    }
-
-    $startYear = (int) date('Y', strtotime($leave['start_date']));
-    $endYear = (int) date('Y', strtotime($leave['end_date']));
-
-    for ($year = $startYear; $year <= $endYear; $year++) {
-        $requestedDays = $this->getRequestedDaysInYear(
-            $leave['start_date'],
-            $leave['end_date'],
-            $year
-        );
-
-        $approvedDays = $this->leaveModel->getApprovedLeaveDaysInYear(
-            (int)$leave['employee_id'],
-            $year
-        );
-
-        if ($approvedDays + $requestedDays > 20) {
-            $_SESSION['error_message'] = 'Cannot approve leave. The employee would exceed the 20-day annual leave limit.';
+        if ($id <= 0 || $status !== 'Approved') {
             header('Location: ' . buildUrl('leaves'));
             exit;
         }
+
+        $leave = $this->leaveModel->getById($id);
+
+        if (!$leave || !in_array($leave['status'] ?? '', ['Pending', 'Rejected'], true)) {
+            header('Location: ' . buildUrl('leaves'));
+            exit;
+        }
+
+        $startYear = (int) date('Y', strtotime($leave['start_date']));
+        $endYear = (int) date('Y', strtotime($leave['end_date']));
+
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            $requestedDays = $this->getRequestedDaysInYear(
+                $leave['start_date'],
+                $leave['end_date'],
+                $year
+            );
+
+            $approvedDays = $this->leaveModel->getApprovedLeaveDaysInYear(
+                (int)$leave['employee_id'],
+                $year
+            );
+
+            if ($approvedDays + $requestedDays > 20) {
+                $_SESSION['error_message'] = 'Cannot approve leave. The employee would exceed the 20-day annual leave limit.';
+                header('Location: ' . buildUrl('leaves'));
+                exit;
+            }
+        }
+
+        $this->leaveModel->updateStatus($id, 'Approved');
+
+        header('Location: ' . buildUrl('leaves'));
+        exit;
     }
-
-    $this->leaveModel->updateStatus($id, 'Approved');
-
-    header('Location: ' . buildUrl('leaves'));
-    exit;
-}
 
     public function reject(): void
     {
@@ -200,12 +212,12 @@ class LeavesController {
         $leave = $this->leaveModel->getById($id);
 
         if (
-    !$leave ||
-    !in_array($leave['status'], ['Pending', 'Approved'], true)
-) {
-    header('Location: ' . buildUrl('leaves'));
-    exit;
-}
+            !$leave ||
+            !in_array($leave['status'], ['Pending', 'Approved'], true)
+        ) {
+            header('Location: ' . buildUrl('leaves'));
+            exit;
+        }
 
         $error = '';
         $rejectionReason = '';

@@ -4,21 +4,25 @@
     <h2>Leave Applications</h2>
 </div>
 
-<form class="row g-3 mb-4" method="GET" action="/leaves">
+<!-- AJAX Filter Form -->
+<form id="filter-form" class="row g-3 mb-4">
+    <!-- CSRF Token -->
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
     <div class="col-md-4">
-        <input type="text" name="employee_name" class="form-control" placeholder="Search by employee" value="<?= htmlspecialchars($_GET['employee_name'] ?? '') ?>">
+        <input type="text" name="employee_name" id="employee_name" class="form-control" placeholder="Search by employee">
     </div>
     <div class="col-md-4">
-        <select name="status" class="form-select">
+        <select name="status" id="status" class="form-select">
             <option value="">All statuses</option>
-            <option value="Pending" <?= (isset($_GET['status']) && $_GET['status'] === 'Pending') ? 'selected' : '' ?>>Pending</option>
-            <option value="Approved" <?= (isset($_GET['status']) && $_GET['status'] === 'Approved') ? 'selected' : '' ?>>Approved</option>
-            <option value="Rejected" <?= (isset($_GET['status']) && $_GET['status'] === 'Rejected') ? 'selected' : '' ?>>Rejected</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
         </select>
     </div>
     <div class="col-md-4 d-flex gap-2">
         <button type="submit" class="btn btn-secondary">Filter</button>
-        <a href="/leaves" class="btn btn-outline-secondary">Reset</a>
+        <button type="button" id="reset-btn" class="btn btn-outline-secondary">Reset</button>
     </div>
 </form>
 
@@ -30,83 +34,59 @@
     <?php unset($_SESSION['error_message']); ?>
 <?php endif; ?>
 
-<table class="table table-striped bg-white shadow-sm">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Employee Name</th>
-            <th>Leave Type</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Reason</th>
-            <th>Status</th>
-            <th>Rejection Reason</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if (empty($leaves)): ?>
-        <tr>
-            <td colspan="9" class="text-center text-muted py-4">No data available</td>
-        </tr>
-        <?php else: ?>
-            <?php foreach ($leaves as $leave): ?>
-            <tr>
-                <td><?= $leave['id'] ?></td>
-                <td><strong><?= htmlspecialchars($leave['employee_name']) ?></strong></td>
-                <td><?php
-                    $leaveTypeLabels = ['S' => 'Sick', 'C' => 'Casual', 'P' => 'Paid'];
-                    echo htmlspecialchars($leaveTypeLabels[$leave['leave_type']] ?? $leave['leave_type'] ?? '');
-                ?></td>
-                <td><?= $leave['start_date'] ?></td>
-                <td><?= $leave['end_date'] ?></td>
-                <td><?= htmlspecialchars($leave['reason']) ?></td>
-                <td><?= htmlspecialchars($leave['status']) ?></td>
-                <td>
-                    <?php if (($leave['status'] ?? '') === 'Rejected' && !empty($leave['rejection_reason'])): ?>
-                        <?= htmlspecialchars($leave['rejection_reason']) ?>
-                    <?php else: ?>
-                        <span class="text-muted">—</span>
-                    <?php endif; ?>
-                </td>
-                <td>
-                    <?php if (in_array($leave['status'], ['Pending', 'Rejected'], true)): ?>
-                        <form action="/leaves-approve" method="POST" style="display:inline;">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                            <input type="hidden" name="id" value="<?= $leave['id'] ?>">
-                            <button class="btn btn-success btn-sm">
-                                Approve
-                            </button>
-                        </form>
-                    <?php endif; ?>
-                    <?php if (in_array($leave['status'], ['Pending', 'Approved'], true)): ?>
-        <a href="/leaves-reject?id=<?= $leave['id'] ?>" class="btn btn-danger btn-sm">
-            Reject
-        </a>
-    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </tbody>
-</table>
-
-<?php if ($totalPages > 1): ?>
-<nav aria-label="Leave pagination" class="mt-3">
-    <ul class="pagination justify-content-center">
-        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-            <a class="page-link" href="/leaves?page=<?= max(1, $page - 1) ?>&employee_name=<?= urlencode($_GET['employee_name'] ?? '') ?>&status=<?= urlencode($_GET['status'] ?? '') ?>">Previous</a>
-        </li>
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
-                <a class="page-link" href="/leaves?page=<?= $i ?>&employee_name=<?= urlencode($_GET['employee_name'] ?? '') ?>&status=<?= urlencode($_GET['status'] ?? '') ?>"><?= $i ?></a>
-            </li>
-        <?php endfor; ?>
-        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-            <a class="page-link" href="/leaves?page=<?= min($totalPages, $page + 1) ?>&employee_name=<?= urlencode($_GET['employee_name'] ?? '') ?>&status=<?= urlencode($_GET['status'] ?? '') ?>">Next</a>
-        </li>
-    </ul>
-</nav>
-<?php endif; ?>
+<!-- Dynamic Table Container -->
+<div id="table-container">
+    <?php include __DIR__ . '/_leaves_table.php'; ?>
+</div>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const tableContainer = document.getElementById('table-container');
+    const resetBtn = document.getElementById('reset-btn');
+
+    function fetchLeaves(page = 1) {
+        const formData = new FormData(filterForm);
+        formData.append('page', page);
+
+        fetch('/leaves', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            tableContainer.innerHTML = html;
+        })
+        .catch(error => console.error('Error fetching leaves:', error));
+    }
+
+    // Filter submit event
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchLeaves(1);
+    });
+
+    // Reset button event
+    resetBtn.addEventListener('click', function() {
+        filterForm.reset();
+        fetchLeaves(1);
+    });
+
+    // Event delegation for dynamic pagination links
+    tableContainer.addEventListener('click', function(e) {
+        const pageLink = e.target.closest('.ajax-page-link');
+        if (pageLink) {
+            e.preventDefault();
+            const page = pageLink.getAttribute('data-page');
+            if (page) {
+                fetchLeaves(page);
+            }
+        }
+    });
+});
+</script>
