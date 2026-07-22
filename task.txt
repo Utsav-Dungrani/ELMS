@@ -28,7 +28,13 @@ Employee-wise leave summary report Missing
 
 Back button on all forms Missing
 Department filter / search Partial
-Pagination on all listing pages Missing
 Employee Leave Panel + leave application form Missing
+Pagination on all listing pages Missing
+Store and display reason for leave rejection Missing
+Admins can approve previously rejected leaves Missing
 Show "No data available" when no records found Missing
+Employees can reapply for same dates after rejection Missing
+    
+Password field on employee form Missing
 Clean routing (replace index.php?route=) Missing
+

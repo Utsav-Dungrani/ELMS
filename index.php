@@ -109,7 +109,7 @@ switch ($route) {
         (new \LeavesController())->updateStatus($_GET['id'] ?? 0, 'Approved');
         break;
     case 'leaves-reject':
-        (new \LeavesController())->updateStatus($_GET['id'] ?? 0, 'Rejected');
+        (new \LeavesController())->reject((int) ($_GET['id'] ?? 0));
         break;
 
     default:

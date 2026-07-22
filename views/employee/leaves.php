@@ -41,12 +41,13 @@
                         <th>End Date</th>
                         <th>Reason</th>
                         <th>Status</th>
+                        <th>Rejection Reason</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($employeeLeaves)): ?>
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No leave requests yet.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No leave requests yet.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($employeeLeaves as $index => $leave): ?>
@@ -63,6 +64,13 @@
                                     $badgeClass = $status === 'Approved' ? 'bg-success' : ($status === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark');
                                     ?>
                                     <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($status) ?></span>
+                                </td>
+                                <td>
+                                    <?php if ($status === 'Rejected' && !empty($leave['rejection_reason'])): ?>
+                                        <?= htmlspecialchars($leave['rejection_reason']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">—</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -178,8 +178,8 @@ class LeavesModel extends \BaseModel {
             return false;
         }
 
-        $query = "INSERT INTO " . $this->getTableName() . " (employee_id, leave_type, start_date, end_date, reason, status, created_at) 
-                  VALUES (:employee_id, :leave_type, :start_date, :end_date, :reason, 'Pending', NOW())";
+        $query = "INSERT INTO " . $this->getTableName() . " (employee_id, leave_type, start_date, end_date, reason, status, rejection_reason, created_at) 
+                  VALUES (:employee_id, :leave_type, :start_date, :end_date, :reason, 'Pending', NULL, NOW())";
 
         $stmt = $this->conn->prepare($query);
         return $stmt->execute([
@@ -191,8 +191,31 @@ class LeavesModel extends \BaseModel {
         ]);
     }
 
-    public function updateStatus(int $id, string $status): bool {
-        $query = "UPDATE " . $this->getTableName() . " SET status = :status WHERE id = :id";
+    public function getById(int $id): ?array {
+        $query = "SELECT l.*, e.employee_name AS employee_name "
+               . "FROM " . $this->getTableName() . " l "
+               . "JOIN employees e ON l.employee_id = e.id "
+               . "WHERE l.id = :id";
+
+        return $this->fetchOne($query, [':id' => $id]);
+    }
+
+    public function updateStatus(int $id, string $status, ?string $rejectionReason = null): bool {
+        if ($status === 'Rejected') {
+            $rejectionReason = trim($rejectionReason ?? '');
+            if ($rejectionReason === '') {
+                return false;
+            }
+
+            $query = "UPDATE " . $this->getTableName() . " SET status = :status, rejection_reason = :rejection_reason WHERE id = :id";
+            return $this->execute($query, [
+                ':status' => $status,
+                ':rejection_reason' => $rejectionReason,
+                ':id' => $id,
+            ]);
+        }
+
+        $query = "UPDATE " . $this->getTableName() . " SET status = :status, rejection_reason = NULL WHERE id = :id";
         return $this->execute($query, [':status' => $status, ':id' => $id]);
     }
 }

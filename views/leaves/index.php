@@ -32,13 +32,14 @@
             <th>End Date</th>
             <th>Reason</th>
             <th>Status</th>
+            <th>Rejection Reason</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (empty($leaves)): ?>
         <tr>
-            <td colspan="8" class="text-center text-muted py-4">No data available</td>
+            <td colspan="9" class="text-center text-muted py-4">No data available</td>
         </tr>
         <?php else: ?>
             <?php foreach ($leaves as $leave): ?>
@@ -54,9 +55,18 @@
                 <td><?= htmlspecialchars($leave['reason']) ?></td>
                 <td><?= htmlspecialchars($leave['status']) ?></td>
                 <td>
-                    <?php if ($leave['status'] === 'Pending'): ?>
+                    <?php if (($leave['status'] ?? '') === 'Rejected' && !empty($leave['rejection_reason'])): ?>
+                        <?= htmlspecialchars($leave['rejection_reason']) ?>
+                    <?php else: ?>
+                        <span class="text-muted">—</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if (in_array($leave['status'], ['Pending', 'Rejected'], true)): ?>
                         <a href="/leaves-approve?id=<?= $leave['id'] ?>" class="btn btn-sm btn-success">Approve</a>
-                        <a href="/leaves-reject?id=<?= $leave['id'] ?>" class="btn btn-sm btn-danger">Reject</a>
+                        <?php if ($leave['status'] === 'Pending'): ?>
+                            <a href="/leaves-reject?id=<?= $leave['id'] ?>" class="btn btn-sm btn-danger">Reject</a>
+                        <?php endif; ?>
                     <?php else: ?>
                         <span class="text-muted">No actions</span>
                     <?php endif; ?>

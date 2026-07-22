@@ -55,7 +55,9 @@
                 <td><?= htmlspecialchars($emp['email'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($emp['department_name'] ?? $emp['department'] ?? $emp['department_id'] ?? 'N/A') ?></td>
                 <td><?= htmlspecialchars($emp['joining_date'] ?? 'N/A') ?></td>
-                <td><?= $emp['total_leaves'] ?? 0 ?></td>
+                <td><?= $emp['total_leaves'] ?? 0 ?>
+                    <button class="btn btn-sm btn-info" onclick="viewSummary(<?= $emp['id'] ?>)">View Summary</button>
+                </td>
                 <td>
                     <a href="/employees-edit?id=<?= $emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
                     <a href="/employees-delete?id=<?= $emp['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this employee?');">Delete</a>
