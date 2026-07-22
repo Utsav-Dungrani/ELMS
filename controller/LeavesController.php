@@ -55,8 +55,8 @@ class LeavesController {
                     $errors[] = 'Start date cannot be in the past.';
                 }
 
-                if ($end <= $start) {
-                    $errors[] = 'End date must be greater than start date.';
+                if ($end < $start) {
+                    $errors[] = 'End date must be on or after start date.';
                 }
             }
         }
