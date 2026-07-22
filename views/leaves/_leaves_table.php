@@ -29,7 +29,13 @@
                 <td><?= htmlspecialchars($leave['start_date']) ?></td>
                 <td><?= htmlspecialchars($leave['end_date']) ?></td>
                 <td><?= htmlspecialchars($leave['reason']) ?></td>
-                <td><?= htmlspecialchars($leave['status']) ?></td>
+                <td>
+                    <?php
+                    $status = $leave['status'] ?? 'Pending';
+                    $badgeClass = $status === 'Approved' ? 'bg-success' : ($status === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark');
+                    ?>
+                    <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($status) ?></span>
+                </td>
                 <td>
                     <?php if (($leave['status'] ?? '') === 'Rejected' && !empty($leave['rejection_reason'])): ?>
                         <?= htmlspecialchars($leave['rejection_reason']) ?>

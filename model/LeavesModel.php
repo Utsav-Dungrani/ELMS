@@ -25,6 +25,15 @@ class LeavesModel extends \BaseModel {
         ];
     }
 
+    public function getById(int $id): ?array {
+        $query = "SELECT * FROM " . $this->getTableName() . " WHERE id = :id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id' => $id]);
+
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
     public function getEmployeeLeaveSummary(int $page = 1, int $limit = 10): array {
         $offset = ($page - 1) * $limit;
 
@@ -229,8 +238,8 @@ class LeavesModel extends \BaseModel {
         ]);
     }
 
-    public function updateStatus(int $id, string $status): bool {
-        $query = "UPDATE " . $this->getTableName() . " SET status = :status WHERE id = :id";
-        return $this->execute($query, [':status' => $status, ':id' => $id]);
+    public function updateStatus(int $id, string $status, string $rejectionReason=''): bool {
+        $query = "UPDATE " . $this->getTableName() . " SET status = :status, rejection_reason = :rejection_reason WHERE id = :id";
+        return $this->execute($query, [':status' => $status, ':rejection_reason' => $rejectionReason, ':id' => $id]);
     }
 }
