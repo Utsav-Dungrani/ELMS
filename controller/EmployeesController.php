@@ -142,8 +142,16 @@ class EmployeesController {
         require_once __DIR__ . '/../views/employees/create.php';
     }
 
-    public function edit(int $id): void {
-        if ($id <= 0) {
+    public function edit(?int $id = null): void {
+        // Extract ID from POST request or fallback to SESSION
+        if (isset($_POST['id']) && (int)$_POST['id'] > 0) {
+            $id = (int) $_POST['id'];
+            $_SESSION['edit_employee_id'] = $id; // Keep in session for page refreshes
+        } elseif (isset($_SESSION['edit_employee_id'])) {
+            $id = (int) $_SESSION['edit_employee_id'];
+        }
+
+        if (!$id || $id <= 0) {
             header('Location: ' . buildUrl('employees'));
             exit;
         }
@@ -156,11 +164,13 @@ class EmployeesController {
         $validDepartmentIds = array_map('intval', array_column($departments, 'id'));
 
         if (!$employee) {
+            unset($_SESSION['edit_employee_id']);
             header('Location: ' . buildUrl('employees'));
             exit;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Process actual form submit when updating employee values
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             $name = trim($_POST['name'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $department = (int) ($_POST['department_id'] ?? 0);
@@ -180,6 +190,9 @@ class EmployeesController {
             } else {
                 $hashedPassword = password_hash($validation['data']['password'], \PASSWORD_DEFAULT);
                 $this->employeeModel->update($id, $validation['data']['name'], $validation['data']['email'], $validation['data']['department_id'], $validation['data']['joining_date'], $hashedPassword);
+                
+                // Clear session memory on success
+                unset($_SESSION['edit_employee_id']);
                 header('Location: ' . buildUrl('employees'));
                 exit;
             }
@@ -195,19 +208,22 @@ class EmployeesController {
         require_once __DIR__ . '/../views/employees/edit.php';
     }
 
-    public function delete(int $id): void {
+    public function delete(?int $id = null): void {
+        // Read ID from POST body or router argument
+        $id = (int) ($_POST['id'] ?? $id ?? 0);
+
         if ($id <= 0) {
             header('Location: ' . buildUrl('employees'));
             exit;
         }
 
-        if ($this->employeeModel->hasLeaveRecords($id)) {
-            $_SESSION['error_message'] = 'Cannot delete employee with leave records.';
-            header('Location: ' . buildUrl('employees'));
-            exit;
+        // Execute transaction through Model
+        if ($this->employeeModel->deleteWithLeaves($id)) {
+            $_SESSION['success_message'] = 'Employee and all associated leave records deleted successfully.';
+        } else {
+            $_SESSION['error_message'] = 'Failed to delete employee records.';
         }
 
-        $this->employeeModel->delete($id);
         header('Location: ' . buildUrl('employees'));
         exit;
     }

@@ -161,6 +161,29 @@ class EmployeesModel extends \BaseModel implements \CrudInterface {
         return $this->execute($query, [':id' => $id]);
     }
 
+    /**
+     * Deletes an employee along with all associated leave records in a single database transaction.
+     */
+    public function deleteWithLeaves(int $id): bool {
+        try {
+            $this->conn->beginTransaction();
+
+            // 1. Delete associated leave records
+            $stmtLeaves = $this->conn->prepare("DELETE FROM leaves WHERE employee_id = :id");
+            $stmtLeaves->execute([':id' => $id]);
+
+            // 2. Delete the employee record
+            $stmtEmp = $this->conn->prepare("DELETE FROM " . $this->getTableName() . " WHERE id = :id");
+            $stmtEmp->execute([':id' => $id]);
+
+            $this->conn->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
+    }
+
     public function getEmployeeSummary(int $id): ?array
     {
         $query = "SELECT

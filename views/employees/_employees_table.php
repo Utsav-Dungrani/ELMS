@@ -28,7 +28,11 @@
                     <button class="btn btn-sm btn-info ms-1" onclick="viewSummary(<?= $emp['id'] ?>)">View Summary</button>
                 </td>
                 <td>
-                    <a href="/employees-edit?id=<?= $emp['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
+                    <form action="/employees-edit" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="id" value="<?= $emp['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-warning">Edit</button>
+                    </form>
                     <form action="/employees-delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this employee?');">
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                         <input type="hidden" name="id" value="<?= $emp['id'] ?>">
