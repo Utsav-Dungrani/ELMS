@@ -65,23 +65,22 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
+<!-- <div class="card border-0 shadow-sm">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0">My Leave Requests</h5>
             <a href="<?= buildUrl('employee-leaves') ?>" class="btn btn-primary btn-sm">Apply Leave</a>
         </div>
-
-        <!-- Wrapper target for AJAX swapping -->
+        
         <div id="dashboard-leaves-table-container">
-            <?php include __DIR__ . '/_dashboard_leaves_table.php'; ?>
+            <?php //include __DIR__ . '/_dashboard_leaves_table.php'; ?>
         </div>
     </div>
-</div>
+</div> -->
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>
 
-<script>
+<!-- <script>
 document.addEventListener('DOMContentLoaded', function() {
     const tableContainer = document.getElementById('dashboard-leaves-table-container');
     const csrfTokenElem = document.getElementById('dashboard-csrf-token');
@@ -119,4 +118,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script>
+</script> -->
